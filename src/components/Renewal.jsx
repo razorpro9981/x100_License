@@ -20,9 +20,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 const Renewal = () => {
   return (
     <div>
-      {" "}
       <div>
-        {" "}
         <Stack
           spacing={4}
           sx={{
@@ -59,6 +57,13 @@ const Renewal = () => {
 
               <Stack direction="row" spacing={4}>
                 <FormControl sx={{ width: "100%" }}>
+                  <FormLabel>License Type</FormLabel>
+                  <Select size="sm" defaultValue="0" placeholder="Select Type">
+                    <Option value="1">One Time</Option>
+                    <Option value="2">Subscription</Option>
+                  </Select>
+                </FormControl>
+                <FormControl sx={{ width: "100%" }}>
                   <FormLabel>Frequency</FormLabel>
                   <Select
                     size="sm"
@@ -67,13 +72,6 @@ const Renewal = () => {
                   >
                     <Option value="1">Monthly</Option>
                     <Option value="2">Quarterly</Option>
-                  </Select>
-                </FormControl>
-                <FormControl sx={{ width: "100%" }}>
-                  <FormLabel>License Type</FormLabel>
-                  <Select size="sm" defaultValue="0" placeholder="Select Type">
-                    <Option value="1">One Time</Option>
-                    <Option value="2">Subscription</Option>
                   </Select>
                 </FormControl>
               </Stack>

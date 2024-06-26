@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable jsx-a11y/anchor-is-valid */
+import React, { useState, useEffect } from "react";
 import { ColorPaletteProp } from "@mui/joy/styles";
 import Avatar from "@mui/joy/Avatar";
 import Box from "@mui/joy/Box";
@@ -16,83 +17,105 @@ import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import Table from "@mui/joy/Table";
 import Sheet from "@mui/joy/Sheet";
+import Checkbox from "@mui/joy/Checkbox";
 import IconButton, { iconButtonClasses } from "@mui/joy/IconButton";
 import Typography from "@mui/joy/Typography";
 import Menu from "@mui/joy/Menu";
 import MenuButton from "@mui/joy/MenuButton";
 import MenuItem from "@mui/joy/MenuItem";
 import Dropdown from "@mui/joy/Dropdown";
-import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import BlockIcon from "@mui/icons-material/Block";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import CreateIcon from "@mui/icons-material/Create";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import Card from "@mui/joy/Card";
+import CardActions from "@mui/joy/CardActions";
+import CardOverflow from "@mui/joy/CardOverflow";
+import Stack from "@mui/joy/Stack";
 
 const rows = [
   {
     id: "001",
     bankName: "Standard Chartered Bank",
     status: "Active",
-    endDate: "2023-12-31",
   },
   {
     id: "002",
     bankName: "Absa Bank",
     status: "Inactive",
-    endDate: "2023-06-30",
   },
   {
     id: "003",
     bankName: "First National Bank",
     status: "Active",
-    endDate: "2024-12-31",
   },
   {
     id: "004",
     bankName: "Nedbank",
     status: "Active",
-    endDate: "2024-11-30",
   },
   {
     id: "005",
     bankName: "Ecobank",
     status: "Inactive",
-    endDate: "2022-12-31",
   },
   {
     id: "006",
     bankName: "Access Bank",
     status: "Active",
-    endDate: "2024-10-31",
   },
   {
     id: "007",
     bankName: "Zenith Bank",
     status: "Inactive",
-    endDate: "2023-08-31",
   },
   {
     id: "008",
     bankName: "UBA",
     status: "Active",
-    endDate: "2025-01-31",
   },
   {
     id: "009",
     bankName: "GTBank",
     status: "Active",
-    endDate: "2024-09-30",
   },
-  {
-    id: "010",
-    bankName: "Stanbic IBTC Bank",
-    status: "Inactive",
-    endDate: "2024-09-30",
-  },
+  // {
+  //   id: "010",
+  //   bankName: "Stanbic IBTC Bank",
+  //   status: "Inactive",
+  // },
+  // {
+  //   id: "011",
+  //   bankName: "Capitec Bank",
+  //   status: "Active",
+  // },
+  // {
+  //   id: "012",
+  //   bankName: "Equity Bank",
+  //   status: "Inactive",
+  // },
+  // {
+  //   id: "013",
+  //   bankName: "Diamond Bank",
+  //   status: "Active",
+  // },
+  // {
+  //   id: "014",
+  //   bankName: "National Bank of Egypt",
+  //   status: "Inactive",
+  // },
+  // {
+  //   id: "015",
+  //   bankName: "Commercial Bank of Ethiopia",
+  //   status: "Active",
+  // },
 ];
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
@@ -114,7 +137,7 @@ function getComparator<Key extends keyof any>(
   a: { [key in Key]: number | string },
   b: { [key in Key]: number | string }
 ) => number {
-  return order === "asc"
+  return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
@@ -134,8 +157,28 @@ function stableSort<T>(
   return stabilizedThis.map((el) => el[0]);
 }
 
+// function RowMenu() {
+//   return (
+//     <Dropdown>
+//       <MenuButton
+//         slots={{ root: IconButton }}
+//         slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
+//       >
+//         <MoreHorizRoundedIcon />
+//       </MenuButton>
+//       <Menu size="sm" sx={{ minWidth: 140 }}>
+//         <MenuItem>Edit</MenuItem>
+//         <MenuItem>Rename</MenuItem>
+//         <MenuItem>Move</MenuItem>
+//         <Divider />
+//         <MenuItem color="danger">Delete</MenuItem>
+//       </Menu>
+//     </Dropdown>
+//   );
+// }
+
 export default function Amendment() {
-  const [order, setOrder] = React.useState<Order>("desc");
+  const [order, setOrder] = React.useState<Order>("asc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
 
@@ -190,21 +233,6 @@ export default function Amendment() {
         >
           <FilterAltIcon />
         </IconButton>
-        {/* <Modal open={open} onClose={() => setOpen(false)}>
-          <ModalDialog aria-labelledby="filter-modal" layout="fullscreen">
-            <ModalClose />
-            <Typography id="filter-modal" level="h2">
-              Filters
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Sheet sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {renderFilters()}
-              <Button color="primary" onClick={() => setOpen(false)}>
-                Submit
-              </Button>
-            </Sheet>
-          </ModalDialog>
-        </Modal> */}
       </Sheet>
       <Box
         className="SearchAndFilters-tabletUp"
@@ -259,7 +287,26 @@ export default function Amendment() {
             <tr>
               <th
                 style={{ width: 48, textAlign: "center", padding: "12px 6px" }}
-              ></th>
+              >
+                {/* <Checkbox
+                  size="sm"
+                  indeterminate={
+                    selected.length > 0 && selected.length !== rows.length
+                  }
+                  checked={selected.length === rows.length}
+                  onChange={(event) => {
+                    setSelected(
+                      event.target.checked ? rows.map((row) => row.id) : []
+                    );
+                  }}
+                  color={
+                    selected.length > 0 || selected.length === rows.length
+                      ? "primary"
+                      : undefined
+                  }
+                  sx={{ verticalAlign: "text-bottom" }}
+                /> */}
+              </th>
               <th style={{ width: 120, padding: "12px 6px" }}>
                 <Link
                   underline="none"
@@ -281,14 +328,28 @@ export default function Amendment() {
               </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Bank Name</th>
               <th style={{ width: 140, padding: "12px 6px" }}>Status</th>
-              <th style={{ width: 140, padding: "12px 6px" }}>End Date</th>
-              <th style={{ width: 140, padding: "12px 6px" }}>View</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Amend</th>
             </tr>
           </thead>
           <tbody>
             {stableSort(rows, getComparator(order, "id")).map((row) => (
               <tr key={row.id}>
-                <td style={{ textAlign: "center", width: 120 }}></td>
+                <td style={{ textAlign: "center", width: 120 }}>
+                  {/* <Checkbox
+                    size="sm"
+                    checked={selected.includes(row.id)}
+                    color={selected.includes(row.id) ? "primary" : undefined}
+                    onChange={(event) => {
+                      setSelected((ids) =>
+                        event.target.checked
+                          ? ids.concat(row.id)
+                          : ids.filter((itemId) => itemId !== row.id)
+                      );
+                    }}
+                    slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
+                    sx={{ verticalAlign: "text-bottom" }}
+                  /> */}
+                </td>
                 <td className="font-semibold text-sm ">
                   <Typography level="body-sm">{row.id}</Typography>
                 </td>
@@ -315,9 +376,6 @@ export default function Amendment() {
                     {row.status}
                   </Chip>
                 </td>
-                <td className="font-semibold text-sm ">
-                  <Typography level="body-sm">{row.endDate}</Typography>
-                </td>
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                     <Link level="body-xs" component="button">
@@ -327,9 +385,11 @@ export default function Amendment() {
                         size="sm"
                         variant="solid"
                       >
-                        <RemoveRedEyeIcon />
+                        <CreateIcon />
                       </Button>
                     </Link>
+
+                    {/* <RowMenu /> */}
                   </Box>
                 </td>
               </tr>
@@ -344,33 +404,149 @@ export default function Amendment() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              // width: "10000px",
             }}
           >
-            <Sheet
-              variant="outlined"
-              sx={{
-                maxWidth: 500,
-                borderRadius: "md",
-                p: 3,
-                boxShadow: "lg",
-              }}
-            >
-              <ModalClose variant="plain" sx={{ m: 1 }} />
-              <Typography
-                component="h2"
-                id="modal-title"
-                level="h4"
-                textColor="inherit"
-                fontWeight="lg"
-                mb={1}
+            <Card>
+              <Box
+                sx={{
+                  // mb: 1,
+                  width: 700,
+                  backgroundColor: "#00357A",
+                  padding: 1,
+                }}
               >
-                This is the modal title
-              </Typography>
-              <Typography id="modal-desc" textColor="text.tertiary">
-                Make sure to use <code>aria-labelledby</code> on the modal
-                dialog with an optional <code>aria-describedby</code> attribute.
-              </Typography>
-            </Sheet>
+                <Typography sx={{ ml: 0.5, color: "white" }} level="title-lg">
+                  Edit Bank Details
+                </Typography>
+                {/* <Typography level="body-sm">
+                  Fill the form to generate encrypted key
+                </Typography> */}
+              </Box>
+              <Divider />
+              <Stack spacing={4}>
+                <Stack spacing={1}>
+                  <FormLabel>Bank Name</FormLabel>
+                  <FormControl sx={{ width: "100%" }}>
+                    <Select
+                      size="sm"
+                      startDecorator={<AccountBalanceIcon />}
+                      defaultValue="1"
+                      placeholder="Select Bank"
+                      disabled
+                    >
+                      <Option value="1">Standard Chartered Bank</Option>
+                      <Option value="2">Rokel Commercial Bank</Option>
+                    </Select>
+                  </FormControl>
+                </Stack>
+
+                <Stack direction="row" spacing={4}>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>License Type</FormLabel>
+                    <Select
+                      size="sm"
+                      defaultValue="1"
+                      placeholder="Select Type"
+                    >
+                      <Option value="1">One Time</Option>
+                      <Option value="2">Subscription</Option>
+                    </Select>
+                  </FormControl>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Frequency</FormLabel>
+                    <Select
+                      size="sm"
+                      defaultValue="2"
+                      placeholder="Select Frequency"
+                    >
+                      <Option value="1">Monthly</Option>
+                      <Option value="2">Quarterly</Option>
+                    </Select>
+                  </FormControl>
+                </Stack>
+
+                {/* <Stack direction="row" spacing={4}>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Previous Subscription Date</FormLabel>
+                    <Input size="sm" type="date" disabled />
+                  </FormControl>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Next Subscription Date</FormLabel>
+                    <Input size="sm" type="date" disabled />
+                  </FormControl>
+                </Stack> */}
+
+                <Stack direction="row" spacing={4}>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Start Date</FormLabel>
+                    <Input size="sm" type="date" />
+                  </FormControl>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>End Date</FormLabel>
+                    <Input size="sm" type="date" disabled />
+                  </FormControl>
+                </Stack>
+                <Stack direction="row" spacing={4}>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Notification Start</FormLabel>
+                    <Select
+                      size="sm"
+                      defaultValue="1"
+                      placeholder="Select Notification"
+                    >
+                      <Option value="1">30 Days Before</Option>
+                      <Option value="2">15 Days Before</Option>
+                    </Select>
+                  </FormControl>
+                  <FormControl sx={{ width: "100%" }}>
+                    <FormLabel>Notification Frequency</FormLabel>
+                    <Select
+                      size="sm"
+                      defaultValue="1"
+                      placeholder="Select Notification"
+                    >
+                      <Option value="1">Daily</Option>
+                      <Option value="2">Weekly</Option>
+                    </Select>
+                  </FormControl>
+                </Stack>
+
+                <div>
+                  <Stack direction="row" spacing={4}>
+                    <FormControl sx={{ width: "100%" }}>
+                      <FormLabel>Grace Period</FormLabel>
+                      <Select
+                        size="sm"
+                        defaultValue="1"
+                        placeholder="Select Grace Period"
+                      >
+                        <Option value="1">10 Days</Option>
+                        <Option value="2">5 Days</Option>
+                      </Select>
+                    </FormControl>
+                  </Stack>
+                </div>
+              </Stack>
+
+              <CardOverflow
+                sx={{ borderTop: "1px solid", borderColor: "divider" }}
+              >
+                <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
+                  {/* <Button size="sm" variant="outlined" color="neutral">
+                    Clear
+                  </Button> */}
+                  <Button
+                    size="sm"
+                    variant="solid"
+                    sx={{ backgroundColor: "#00357A" }}
+                    onClick={() => setOpen(true)}
+                  >
+                    Save
+                  </Button>
+                </CardActions>
+              </CardOverflow>
+            </Card>
           </Modal>
         </Table>
       </Sheet>

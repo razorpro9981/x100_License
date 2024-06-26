@@ -29,7 +29,7 @@ export default function Categories() {
           position: "sticky",
           top: { sm: -100, md: -110 },
           bgcolor: "background.body",
-          zIndex: 9995,
+          // zIndex: 9995,
         }}
       >
         <Typography
@@ -66,12 +66,7 @@ export default function Categories() {
               },
             }}
           >
-            <Tab
-              sx={{ borderRadius: "6px 6px 0 0" }}
-              indicatorInset
-              value={0}
-              // onClick={<Initial />}
-            >
+            <Tab sx={{ borderRadius: "6px 6px 0 0" }} indicatorInset value={0}>
               Initial Request
             </Tab>
             <Tab sx={{ borderRadius: "6px 6px 0 0" }} indicatorInset value={1}>
@@ -91,7 +86,6 @@ export default function Categories() {
             <Amendment />
           </TabPanel>
         </Tabs>
-        {/* <Divider /> */}
       </Box>
       {/* <Stack
         spacing={4}

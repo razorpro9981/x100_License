@@ -1,8 +1,13 @@
-import * as React from "react";
+// import * as React from "react";
+import React, { useState, useEffect } from "react";
 import Table from "@mui/joy/Table";
 import Button from "@mui/joy/Button";
 import { CssBaseline, Box } from "@mui/material";
 import Chip from "@mui/joy/Chip";
+import Modal from "@mui/joy/Modal";
+import ModalClose from "@mui/joy/ModalClose";
+import Sheet from "@mui/joy/Sheet";
+import Typography from "@mui/joy/Typography";
 
 function createData(index, bankNo, bankName, status, gracePeriod) {
   return { index, bankNo, bankName, status, gracePeriod };
@@ -15,6 +20,7 @@ const rows = [
 ];
 
 export default function TableHover() {
+  const [open, setOpen] = useState(false);
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":
@@ -63,12 +69,50 @@ export default function TableHover() {
                 <td>
                   <Button
                     sx={{ backgroundColor: "#00357A", width: 75 }}
-                    onClick={() => console.log(`Checking ${row.bankName}`)}
+                    // onClick={() => console.log(`Checking ${row.bankName}`)}
+                    onClick={() => setOpen(true)}
                     size="sm"
                     variant="solid"
                   >
                     Details
                   </Button>
+                  <Modal
+                    aria-labelledby="modal-title"
+                    aria-describedby="modal-desc"
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Sheet
+                      variant="outlined"
+                      sx={{
+                        maxWidth: 500,
+                        borderRadius: "md",
+                        p: 3,
+                        boxShadow: "lg",
+                      }}
+                    >
+                      <ModalClose variant="plain" sx={{ m: 1 }} />
+                      <Typography
+                        component="h2"
+                        id="modal-title"
+                        level="h4"
+                        textColor="inherit"
+                        fontWeight="lg"
+                        mb={1}
+                      >
+                        Details for {row.bankName}
+                      </Typography>
+                      <Typography id="modal-desc" textColor="text.tertiary">
+                        Make sure to use <code>aria-labelledby</code> on the
+                        modal dialog with an optional {row.bankName}
+                      </Typography>
+                    </Sheet>
+                  </Modal>
                 </td>
               </tr>
             ))}

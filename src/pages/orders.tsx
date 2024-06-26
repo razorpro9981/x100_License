@@ -34,7 +34,7 @@ const Orders = () => {
           gap: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        {/* <Box sx={{ display: "flex", alignItems: "center" }}>
           <Breadcrumbs
             size="sm"
             aria-label="breadcrumbs"
@@ -62,7 +62,7 @@ const Orders = () => {
               Orders
             </Typography>
           </Breadcrumbs>
-        </Box>
+        </Box> */}
         <Box
           sx={{
             display: "flex",
@@ -75,17 +75,19 @@ const Orders = () => {
           }}
         >
           <Typography level="h2" component="h1">
-            Orders
+            History
           </Typography>
           <Button
-            color="primary"
+            // color="#00357A"
+            sx={{ backgroundColor: "#00357A" }}
             startDecorator={<DownloadRoundedIcon />}
-            size="sm"
+            size="md"
           >
-            Download PDF
+            Download
           </Button>
         </Box>
         <OrderTable />
+
         {/* <OrderList /> */}
       </Box>
     </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Divider from "@mui/joy/Divider";
@@ -16,11 +16,14 @@ import Card from "@mui/joy/Card";
 import CardActions from "@mui/joy/CardActions";
 import CardOverflow from "@mui/joy/CardOverflow";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import Modal from "@mui/joy/Modal";
+import ModalClose from "@mui/joy/ModalClose";
+import Sheet from "@mui/joy/Sheet";
 
 const Initial = () => {
+  const [open, setOpen] = useState(false);
   return (
     <div>
-      {" "}
       <Stack
         spacing={4}
         sx={{
@@ -57,6 +60,13 @@ const Initial = () => {
 
             <Stack direction="row" spacing={4}>
               <FormControl sx={{ width: "100%" }}>
+                <FormLabel>License Type</FormLabel>
+                <Select size="sm" defaultValue="0" placeholder="Select Type">
+                  <Option value="1">One Time</Option>
+                  <Option value="2">Subscription</Option>
+                </Select>
+              </FormControl>
+              <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Frequency</FormLabel>
                 <Select
                   size="sm"
@@ -67,25 +77,7 @@ const Initial = () => {
                   <Option value="2">Quarterly</Option>
                 </Select>
               </FormControl>
-              <FormControl sx={{ width: "100%" }}>
-                <FormLabel>License Type</FormLabel>
-                <Select size="sm" defaultValue="0" placeholder="Select Type">
-                  <Option value="1">One Time</Option>
-                  <Option value="2">Subscription</Option>
-                </Select>
-              </FormControl>
             </Stack>
-
-            {/* <Stack direction="row" spacing={4}>
-              <FormControl sx={{ width: "100%" }}>
-                <FormLabel>Previous Subscription Date</FormLabel>
-                <Input size="sm" type="date" disabled />
-              </FormControl>
-              <FormControl sx={{ width: "100%" }}>
-                <FormLabel>Next Subscription Date</FormLabel>
-                <Input size="sm" type="date" disabled />
-              </FormControl>
-            </Stack> */}
 
             <Stack direction="row" spacing={4}>
               <FormControl sx={{ width: "100%" }}>
@@ -148,11 +140,49 @@ const Initial = () => {
                 size="sm"
                 variant="solid"
                 sx={{ backgroundColor: "#00357A" }}
+                onClick={() => setOpen(true)}
               >
                 Generate Key
               </Button>
             </CardActions>
           </CardOverflow>
+          <Modal
+            aria-labelledby="modal-title"
+            aria-describedby="modal-desc"
+            open={open}
+            onClose={() => setOpen(false)}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Sheet
+              variant="outlined"
+              sx={{
+                maxWidth: 500,
+                borderRadius: "md",
+                p: 3,
+                boxShadow: "lg",
+              }}
+            >
+              <ModalClose variant="plain" sx={{ m: 1 }} />
+              <Typography
+                component="h2"
+                id="modal-title"
+                level="h4"
+                textColor="inherit"
+                fontWeight="lg"
+                mb={1}
+              >
+                This is the modal title
+              </Typography>
+              <Typography id="modal-desc" textColor="text.tertiary">
+                Make sure to use <code>aria-labelledby</code> on the modal
+                dialog with an optional <code>aria-describedby</code> attribute.
+              </Typography>
+            </Sheet>
+          </Modal>
         </Card>
       </Stack>
     </div>
