@@ -43,7 +43,7 @@ const Settings = () => {
             Settings
           </Typography>
           <Tabs
-            defaultValue={0}
+            defaultValue={1}
             sx={{
               bgcolor: "transparent",
             }}
@@ -69,14 +69,14 @@ const Settings = () => {
                 },
               }}
             >
-              <Tab
+              {/* <Tab
                 sx={{ borderRadius: "6px 6px 0 0" }}
                 indicatorInset
                 value={0}
                 // onClick={<Initial />}
               >
                 Profile
-              </Tab>
+              </Tab> */}
               <Tab
                 sx={{ borderRadius: "6px 6px 0 0" }}
                 indicatorInset

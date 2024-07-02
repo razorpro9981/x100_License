@@ -6,6 +6,7 @@ import Orders from "./pages/orders";
 import Categories from "./pages/categories";
 import Customers from "./pages/customers";
 import Settings from "./pages/settings";
+import Login from "./pages/login";
 
 const AppRoutes = () => (
   // <Router>
@@ -16,6 +17,7 @@ const AppRoutes = () => (
     <Route path="/categories" element={<Categories />} />
     <Route path="/customers" element={<Customers />} />
     <Route path="/settings" element={<Settings />} />
+    {/* <Route path="/" element={<Login />} /> */}
   </Routes>
   // </Router>
 );

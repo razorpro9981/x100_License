@@ -151,7 +151,7 @@ const Renewal = () => {
                   variant="solid"
                   sx={{ backgroundColor: "#00357A" }}
                 >
-                  Generate Key
+                  Save
                 </Button>
               </CardActions>
             </CardOverflow>
