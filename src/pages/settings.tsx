@@ -32,7 +32,7 @@ const Settings = () => {
             position: "sticky",
             top: { sm: -100, md: -110 },
             bgcolor: "background.body",
-            zIndex: 9995,
+            // zIndex: 9995,
           }}
         >
           <Typography

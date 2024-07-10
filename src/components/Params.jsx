@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Divider from "@mui/joy/Divider";
@@ -6,21 +6,97 @@ import Typography from "@mui/joy/Typography";
 import Table from "@mui/joy/Table";
 import Stack from "@mui/joy/Stack";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Card from "@mui/joy/Card";
-import CardOverflow from "@mui/joy/CardOverflow";
-import IconButton from "@mui/joy/IconButton";
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
+import Modal from "@mui/joy/Modal";
+import ModalClose from "@mui/joy/ModalClose";
+import Sheet from "@mui/joy/Sheet";
+import CardActions from "@mui/joy/CardActions";
+import FormControl from "@mui/joy/FormControl";
+import FormLabel from "@mui/joy/FormLabel";
+import Input from "@mui/joy/Input";
+import Card from "@mui/joy/Card";
+import Select from "@mui/joy/Select";
+import Option from "@mui/joy/Option";
+import axios from "axios";
 
 const Params = () => {
+  const [open, setOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [formValues, setFormValues] = useState({
+    CodeType: "",
+    CodeDesc: "", // Initialize CodeDesc in formValues
+    Status: "Active",
+  });
+
+  const handlePost = async () => {
+    try {
+      const response = await axios.post(
+        `http://10.203.14.73:3000/v1/api/license/add-param`,
+        {
+          code_type: formValues.CodeType,
+          code_desc: formValues.CodeDesc,
+          status: formValues.Status,
+        }
+      );
+      console.log("Response:", response.data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   const rows = [
-    { parameter: "Bank" },
-    { parameter: "Frequency" },
-    { parameter: "License Type" },
-    { parameter: "Notification Start" },
-    { parameter: "Notification Type" },
-    { parameter: "Grace Period" },
+    { parameter: "Bank", fields: ["Bank Name", "Code Type", "Status"] },
+    { parameter: "Frequency", fields: ["Frequency", "Code Type", "Status"] },
+    { parameter: "License Type", fields: ["License", "Code Type", "Status"] },
+    {
+      parameter: "Notification Frequency",
+      fields: ["Notification Frequency", "Code Type", "Status"],
+    },
   ];
+
+  const codeTypeMapping = {
+    Bank: "Bank",
+    Frequency: "LicenseFrequency",
+    "License Type": "LicenseType",
+    "Notification Frequency": "NotificationFrequency",
+  };
+
+  const handleOpen = (row) => {
+    setSelectedRow(row);
+    if (row.parameter === "Bank") {
+      setFormValues({
+        ...formValues,
+        CodeType: codeTypeMapping[row.parameter],
+        CodeDesc: row.fields[0], // Set CodeDesc to Bank Name
+        Status: "Active",
+      });
+    } else {
+      setFormValues({
+        ...formValues,
+        CodeType: codeTypeMapping[row.parameter],
+        CodeDesc: "", // Reset CodeDesc for other parameters
+        Status: "Active",
+      });
+    }
+    setOpen(true);
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormValues((prevValues) => ({
+      ...prevValues,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = () => {
+    console.log("Form Values:", formValues);
+    setOpen(false);
+    setFormValues({
+      CodeType: "",
+      CodeDesc: "", // Reset CodeDesc along with other fields
+      Status: "Active",
+    });
+  };
 
   return (
     <div>
@@ -72,7 +148,7 @@ const Params = () => {
                   <td>
                     <Button
                       sx={{ backgroundColor: "#00357A", width: 30 }}
-                      // onClick={() => setOpen(true)}
+                      onClick={() => handleOpen(row)}
                       size="sm"
                       variant="solid"
                     >
@@ -82,7 +158,6 @@ const Params = () => {
                   <td>
                     <Button
                       sx={{ backgroundColor: "#00357A", width: 30 }}
-                      // onClick={() => setOpen(true)}
                       size="sm"
                       variant="solid"
                     >
@@ -93,9 +168,102 @@ const Params = () => {
               ))}
             </tbody>
           </Table>
-          <CardOverflow
-            sx={{ borderTop: "1px solid", borderColor: "divider" }}
-          />
+          <Modal
+            aria-labelledby="modal-title"
+            aria-describedby="modal-desc"
+            open={open}
+            onClose={() => setOpen(false)}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  backdropFilter: "none",
+                },
+              },
+            }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginLeft: "15%",
+            }}
+          >
+            <Sheet
+              variant="outlined"
+              sx={{
+                width: 500,
+                borderRadius: "md",
+                p: 3,
+                boxShadow: "lg",
+              }}
+            >
+              <ModalClose variant="plain" sx={{ m: 1 }} />
+              {selectedRow && (
+                <Typography id="modal-desc" textColor="text.tertiary">
+                  <Box sx={{ mb: 1 }}>
+                    <Typography level="title-md">
+                      Add {selectedRow.parameter} Parameter
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ marginBottom: 2 }} />
+                  <Stack spacing={2}>
+                    {selectedRow.fields.map((field, idx) => (
+                      <Stack spacing={1} key={idx}>
+                        <FormLabel>{field}</FormLabel>
+                        <FormControl sx={{ width: "100%" }}>
+                          {field === "Code Type" ? (
+                            <Input
+                              size="sm"
+                              value={formValues.CodeType}
+                              disabled
+                            />
+                          ) : field === "Code Desc" ? (
+                            <Input
+                              size="sm"
+                              value={formValues.CodeDesc}
+                              disabled
+                            />
+                          ) : field === "Status" ? (
+                            <Select
+                              placeholder="Select Status"
+                              value={formValues.Status}
+                              onChange={(e) =>
+                                handleInputChange("Status", e.target.value)
+                              }
+                            >
+                              <Option value="Active">Active</Option>
+                              <Option value="Inactive">Inactive</Option>
+                            </Select>
+                          ) : (
+                            <Input
+                              size="sm"
+                              placeholder={`Enter ${field}`}
+                              onChange={(e) =>
+                                handleInputChange(field, e.target.value)
+                              }
+                            />
+                          )}
+                        </FormControl>
+                      </Stack>
+                    ))}
+                  </Stack>
+                  <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
+                    <Button
+                      size="sm"
+                      variant="solid"
+                      sx={{ backgroundColor: "#00357A" }}
+                      onClick={() => {
+                        handlePost();
+                        handleSave();
+                      }}
+                    >
+                      Save
+                    </Button>
+                  </CardActions>
+                </Typography>
+              )}
+            </Sheet>
+          </Modal>
         </Card>
       </Stack>
     </div>

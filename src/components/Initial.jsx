@@ -19,6 +19,7 @@ import Sheet from "@mui/joy/Sheet";
 import Input from "@mui/joy/Input";
 import Swal from "sweetalert2";
 import { Alert, Result } from "antd";
+import dayjs from "dayjs"; // Import dayjs for date manipulation
 
 const Initial = () => {
   const [open, setOpen] = useState(false);
@@ -57,6 +58,12 @@ const Initial = () => {
     fetchBankNames();
   }, []);
 
+  useEffect(() => {
+    if (startDate && selectedFrequency) {
+      setEndDate(calculateEndDate(startDate, selectedFrequency));
+    }
+  }, [startDate, selectedFrequency]);
+
   const handleConsole = () => {
     console.log("Selected Bank:", selectedBank);
     console.log("Selected License Type:", selectedLicenseType);
@@ -68,136 +75,15 @@ const Initial = () => {
     console.log("Grace Period:", gracePeriod);
   };
 
-  // const handleSave = async () => {
-  //   const formData = {
-  //     bank_id: selectedBank,
-  //     license_type_id: selectedLicenseType,
-  //     license_frequency_id: selectedFrequency,
-  //     notification_frequency_id: selectedNotificationFreq,
-  //     start_date: startDate,
-  //     end_date: endDate,
-  //     notification_start: notificationStart,
-  //     grace_period: gracePeriod,
-  //   };
-  //   try {
-  //     const response = await axios.post(
-  //       `http://10.203.14.73:3000/v1/api/license/generate-license`,
-  //       formData
-  //     );
-  //     console.log(formData);
-  //     console.log("Response:", response.data);
-  //     if (response.data.code === 200) {
-  //       Swal.fire({
-  //         icon: "success",
-  //         title: response.data.result,
-  //         showConfirmButton: false,
-  //         // timer: 1500,
-  //       });
-  //     } else {
-  //       Swal.fire({
-  //         icon: "error",
-  //         title: response.data.result,
-  //         showConfirmButton: false,
-  //         // timer: 1500,
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.log(formData);
-  //     console.error("Error generating license:", error);
-  //   }
-  // };
-
-  // const handleSave = async () => {
-  //   const formData = {
-  //     bank_id: selectedBank,
-  //     license_type_id: selectedLicenseType,
-  //     license_frequency_id: selectedFrequency,
-  //     notification_frequency_id: selectedNotificationFreq,
-  //     start_date: startDate,
-  //     end_date: endDate,
-  //     notification_start: notificationStart,
-  //     grace_period: gracePeriod,
-  //   };
-
-  //   try {
-  //     const response = await axios.post(
-  //       `http://10.203.14.73:3000/v1/api/license/generate-license`,
-  //       formData
-  //     );
-  //     console.log("Form Data:", formData);
-  //     console.log("Response:", response.data);
-
-  //     // if (response.data.code === 200) {
-  //     //   console.log("Showing success Swal");
-  //     //   Swal.fire({
-  //     //     icon: "success",
-  //     //     title: response.data.result,
-  //     //     showConfirmButton: false,
-  //     //     // timer: 1500,
-  //     //   });
-  //     // } else {
-  //     //   console.log("Showing error Swal");
-  //     //   Swal.fire({
-  //     //     icon: "success",
-  //     //     title: response.data.result,
-  //     //     showConfirmButton: true,
-  //     //     // timer: 1500,
-  //     //   });
-  //     // }
-
-  //     if (response.data.code === 200) {
-  //       return (
-  //         <Result
-  //           status="success"
-  //           title="Successfully Purchased Cloud Server ECS!"
-  //           subTitle="Order number: 2017182818828182881 Cloud server configuration takes 1-5 minutes, please wait."
-  //           extra={[
-  //             <Button type="primary" key="console">
-  //               Go Console
-  //             </Button>,
-  //             <Button key="buy">Buy Again</Button>,
-  //           ]}
-  //         />
-  //       );
-  //     } else {
-  //       return (
-  //         <Result
-  //           status="success"
-  //           title="Successfully Purchased Cloud Server ECS!"
-  //           subTitle="Order number: 2017182818828182881 Cloud server configuration takes 1-5 minutes, please wait."
-  //           extra={[
-  //             <Button type="primary" key="console">
-  //               Go Console
-  //             </Button>,
-  //             <Button key="buy">Buy Again</Button>,
-  //           ]}
-  //         />
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.log("Form Data:", formData);
-  //     console.error("Error generating license:", error);
-  //     // Swal.fire({
-  //     //   icon: "error",
-  //     //   title: error.response.data.result,
-  //     //   text: error.message,
-  //     //   showConfirmButton: true,
-  //     // });
-  //     Alert.error({
-  //       title: error.response.data.result,
-  //       // subTitle: error.message,
-  //     });
-  //   }
-  // };
   const handleClear = () => {
-    // setSelectedBank([]);
-    // setSelectedLicenseType("");
-    // setSelectedFrequency("");
-    // setSelectedNotificationFreq("");
-    // setStartDate("");
-    // setEndDate("");
-    // setNotificationStart("");
-    // setGracePeriod("");
+    setSelectedBank("");
+    setSelectedLicenseType("");
+    setSelectedFrequency("");
+    setSelectedNotificationFreq("");
+    setStartDate("");
+    setEndDate("");
+    setNotificationStart("");
+    setGracePeriod("");
   };
 
   const handleSave = async () => {
@@ -221,11 +107,44 @@ const Initial = () => {
       console.log("Response:", response.data);
       setResponse(response.data);
       setError(null);
+
+      // Download the response
+      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+        type: "text/plain",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "response.txt";
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error generating license:", error);
       setError(error);
       setResponse(null);
     }
+  };
+
+  const calculateEndDate = (startDate, frequency) => {
+    const start = dayjs(startDate);
+    let end;
+    switch (frequency) {
+      case "Monthly":
+        end = start.add(1, "month");
+        break;
+      case "Quarterly":
+        end = start.add(3, "month");
+        break;
+      case "Semiannually":
+        end = start.add(6, "month");
+        break;
+      case "Annually":
+        end = start.add(1, "year");
+        break;
+      default:
+        end = start;
+    }
+    return end.format("YYYY-MM-DD");
   };
 
   return (
@@ -293,7 +212,7 @@ const Initial = () => {
                   onChange={(e, newValue) => setSelectedFrequency(newValue)}
                 >
                   {frequency.map((freq) => (
-                    <Option key={freq.id} value={freq.id}>
+                    <Option key={freq.id} value={freq.code_desc}>
                       {freq.code_desc}
                     </Option>
                   ))}
@@ -312,11 +231,7 @@ const Initial = () => {
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel required>End Date</FormLabel>
-                <Input
-                  size="sm"
-                  type="date"
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+                <Input size="sm" type="date" value={endDate} readOnly />
               </FormControl>
             </Stack>
             <Stack direction="row" spacing={4}>
@@ -413,16 +328,6 @@ const Initial = () => {
               }}
             >
               <ModalClose variant="plain" sx={{ m: 1 }} />
-              {/* <Typography
-                component="h2"
-                id="modal-title"
-                level="h4"
-                textColor="inherit"
-                fontWeight="lg"
-                mb={1}
-              >
-                This is the modal title
-              </Typography> */}
               <Typography id="modal-desc" textColor="text.tertiary">
                 {response && response.code === "200" && (
                   <Result
