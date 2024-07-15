@@ -64,6 +64,14 @@ const Initial = () => {
     }
   }, [startDate, selectedFrequency]);
 
+  useEffect(() => {
+    if (startDate && endDate && notificationStart) {
+      setSelectedNotificationFreq(
+        calculateNotificationFrequency(startDate, endDate, notificationStart)
+      );
+    }
+  }, [startDate, endDate, notificationStart]);
+
   const handleConsole = () => {
     console.log("Selected Bank:", selectedBank);
     console.log("Selected License Type:", selectedLicenseType);
@@ -86,24 +94,73 @@ const Initial = () => {
     setGracePeriod("");
   };
 
+  // const handleSave = async () => {
+  //   const formData = {
+  //     bank_id: selectedBank,
+  //     license_type_id: selectedLicenseType,
+  //     license_frequency_id: selectedFrequency,
+  //     notification_frequency_id: selectedNotificationFreq,
+  //     start_date: startDate,
+  //     end_date: endDate,
+  //     notification_start: notificationStart,
+  //     grace_period: gracePeriod,
+  //   };
+
+  //   // try {
+  //   // const response = await axios.post(
+  //   //   `http://10.203.14.73:3000/v1/api/license/generate-license`,
+  //   //   formData
+  //   // );
+  //   console.log("Form Data:", formData);
+  //   // console.log("Response:", response.data);
+  //   // setResponse(response.data);
+  //   // setError(null);
+
+  //   // Download the response
+  //   //   const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+  //   //     type: "text/plain",
+  //   //   });
+  //   //   const url = window.URL.createObjectURL(blob);
+  //   //   const a = document.createElement("a");
+  //   //   a.href = url;
+  //   //   a.download = "response.txt";
+  //   //   a.click();
+  //   //   window.URL.revokeObjectURL(url);
+  //   // } catch (error) {
+  //   //   console.error("Error generating license:", error);
+  //   //   setError(error);
+  //   //   setResponse(null);
+  //   // }
+  // };
+
   const handleSave = async () => {
+    // Find the notification frequency id based on the selectedNotificationFreq
+    const notificationFreqObj = notificationFreq.find(
+      (freq) => freq.code_desc === selectedNotificationFreq
+    );
+    const notificationFrequencyId = notificationFreqObj
+      ? notificationFreqObj.id
+      : "";
+
     const formData = {
       bank_id: selectedBank,
       license_type_id: selectedLicenseType,
       license_frequency_id: selectedFrequency,
-      notification_frequency_id: selectedNotificationFreq,
+      notification_frequency_id: notificationFrequencyId,
       start_date: startDate,
       end_date: endDate,
       notification_start: notificationStart,
       grace_period: gracePeriod,
     };
 
+    console.log("Form Data:", formData);
+
+    // Uncomment the below code for actual API call
     try {
       const response = await axios.post(
         `http://10.203.14.73:3000/v1/api/license/generate-license`,
         formData
       );
-      console.log("Form Data:", formData);
       console.log("Response:", response.data);
       setResponse(response.data);
       setError(null);
@@ -125,26 +182,90 @@ const Initial = () => {
     }
   };
 
-  const calculateEndDate = (startDate, frequency) => {
+  // const calculateEndDate = (startDate, frequency) => {
+  //   const start = dayjs(startDate);
+  //   let end;
+  //   switch (frequency) {
+  //     case "Monthly":
+  //       end = start.add(1, "month");
+  //       break;
+  //     case "Quarterly":
+  //       end = start.add(3, "month");
+  //       break;
+  //     case "Semiannually":
+  //       end = start.add(6, "month");
+  //       break;
+  //     case "Annually":
+  //       end = start.add(1, "year");
+  //       break;
+  //     default:
+  //       end = start;
+  //   }
+  //   return end.format("YYYY-MM-DD");
+  // };
+  useEffect(() => {
+    if (startDate && selectedFrequency) {
+      console.log(
+        "Calculating end date with startDate:",
+        startDate,
+        "and selectedFrequency:",
+        selectedFrequency
+      );
+      setEndDate(calculateEndDate(startDate, selectedFrequency));
+    }
+  }, [startDate, selectedFrequency]);
+
+  const calculateEndDate = (startDate, frequencyId) => {
     const start = dayjs(startDate);
     let end;
-    switch (frequency) {
-      case "Monthly":
-        end = start.add(1, "month");
-        break;
-      case "Quarterly":
-        end = start.add(3, "month");
-        break;
-      case "Semiannually":
-        end = start.add(6, "month");
-        break;
-      case "Annually":
-        end = start.add(1, "year");
-        break;
-      default:
-        end = start;
+
+    // Find the frequency object based on the frequencyId
+    const frequencyObj = frequency.find((freq) => freq.id === frequencyId);
+
+    if (frequencyObj) {
+      switch (frequencyObj.code_desc) {
+        case "Monthly":
+          end = start.add(1, "month");
+          break;
+        case "Quarterly":
+          end = start.add(3, "month");
+          break;
+        case "Semiannually":
+          end = start.add(6, "month");
+          break;
+        case "Annually":
+          end = start.add(1, "year");
+          break;
+        default:
+          end = start;
+      }
+    } else {
+      end = start;
     }
+
+    console.log("Calculated end date:", end.format("YYYY-MM-DD"));
     return end.format("YYYY-MM-DD");
+  };
+
+  const calculateNotificationFrequency = (
+    startDate,
+    endDate,
+    notificationStart
+  ) => {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const notification = dayjs(notificationStart);
+
+    const totalDays = end.diff(start, "day");
+    const notificationDays = end.diff(notification, "day");
+
+    if (notificationDays <= 14) {
+      return "Daily";
+    } else if (notificationDays <= 60) {
+      return "Weekly";
+    } else {
+      return "Monthly";
+    }
   };
 
   return (
@@ -212,7 +333,7 @@ const Initial = () => {
                   onChange={(e, newValue) => setSelectedFrequency(newValue)}
                 >
                   {frequency.map((freq) => (
-                    <Option key={freq.id} value={freq.code_desc}>
+                    <Option key={freq.id} value={freq.id}>
                       {freq.code_desc}
                     </Option>
                   ))}
@@ -239,31 +360,24 @@ const Initial = () => {
                 <FormLabel required>Notification Start</FormLabel>
                 <Input
                   size="sm"
-                  placeholder="Select Notification"
+                  type="date"
                   onChange={(e) => setNotificationStart(e.target.value)}
                 />
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel required>Notification Frequency</FormLabel>
-                <Select
+                <Input
                   size="sm"
-                  placeholder="Select Notification"
-                  onChange={(e, newValue) =>
-                    setSelectedNotificationFreq(newValue)
-                  }
-                >
-                  {notificationFreq.map((notification) => (
-                    <Option key={notification.id} value={notification.id}>
-                      {notification.code_desc}
-                    </Option>
-                  ))}
-                </Select>
+                  type="text"
+                  value={selectedNotificationFreq}
+                  readOnly
+                />
               </FormControl>
             </Stack>
 
             <div>
               <Stack direction="row" spacing={4}>
-                <FormControl sx={{ width: "100%" }}>
+                <FormControl sx={{ width: "47.5%" }}>
                   <FormLabel>Grace Period</FormLabel>
                   <Input
                     size="sm"
@@ -335,10 +449,28 @@ const Initial = () => {
                     title={response.result}
                     subTitle="Your license has been successfully generated."
                     extra={[
-                      <Button type="primary" key="console">
+                      <Button
+                        type="primary"
+                        key="console"
+                        onClick={() => {
+                          const subject = encodeURIComponent(
+                            "License Information"
+                          );
+                          const body = encodeURIComponent(
+                            `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${JSON.stringify(
+                              response.data,
+                              null,
+                              2
+                            )}\n\nBest regards,\nYour Company`
+                          );
+                          window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                        }}
+                      >
                         Send Mail
                       </Button>,
-                      <Button key="buy">Generate Another License</Button>,
+                      <Button key="buy" onClick={() => setOpen(false)}>
+                        Generate Another License
+                      </Button>,
                     ]}
                   />
                 )}
