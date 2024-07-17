@@ -19,7 +19,7 @@ import Sheet from "@mui/joy/Sheet";
 import Input from "@mui/joy/Input";
 import Swal from "sweetalert2";
 import { Alert, Result } from "antd";
-import dayjs from "dayjs"; // Import dayjs for date manipulation
+import dayjs from "dayjs";
 
 const Initial = () => {
   const [open, setOpen] = useState(false);
@@ -27,7 +27,6 @@ const Initial = () => {
   const [licenseType, setLicenseType] = useState([]);
   const [frequency, setFrequency] = useState([]);
   const [notificationFreq, setNotificationFreq] = useState([]);
-
   const [selectedBank, setSelectedBank] = useState("");
   const [selectedLicenseType, setSelectedLicenseType] = useState("");
   const [selectedFrequency, setSelectedFrequency] = useState("");
@@ -38,6 +37,7 @@ const Initial = () => {
   const [gracePeriod, setGracePeriod] = useState("");
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     const fetchBankNames = async () => {
@@ -66,9 +66,19 @@ const Initial = () => {
 
   useEffect(() => {
     if (startDate && endDate && notificationStart) {
-      setSelectedNotificationFreq(
-        calculateNotificationFrequency(startDate, endDate, notificationStart)
-      );
+      if (
+        dayjs(notificationStart).isBefore(startDate) ||
+        dayjs(notificationStart).isAfter(endDate)
+      ) {
+        setValidationError(
+          "Notification start date must be between start date and end date."
+        );
+      } else {
+        setValidationError("");
+        setSelectedNotificationFreq(
+          calculateNotificationFrequency(startDate, endDate, notificationStart)
+        );
+      }
     }
   }, [startDate, endDate, notificationStart]);
 
@@ -92,48 +102,83 @@ const Initial = () => {
     setEndDate("");
     setNotificationStart("");
     setGracePeriod("");
+    setValidationError("");
   };
 
   // const handleSave = async () => {
+  //   if (
+  //     dayjs(notificationStart).isBefore(startDate) ||
+  //     dayjs(notificationStart).isAfter(endDate)
+  //   ) {
+  //     setValidationError(
+  //       "Notification start date must be between start date and end date."
+  //     );
+  //     return;
+  //   }
+
+  //   // Find the notification frequency id based on the selectedNotificationFreq
+  //   const notificationFreqObj = notificationFreq.find(
+  //     (freq) => freq.code_desc === selectedNotificationFreq
+  //   );
+  //   const notificationFrequencyId = notificationFreqObj
+  //     ? notificationFreqObj.id
+  //     : "";
+
   //   const formData = {
   //     bank_id: selectedBank,
   //     license_type_id: selectedLicenseType,
   //     license_frequency_id: selectedFrequency,
-  //     notification_frequency_id: selectedNotificationFreq,
+  //     notification_frequency_id: notificationFrequencyId,
   //     start_date: startDate,
   //     end_date: endDate,
   //     notification_start: notificationStart,
   //     grace_period: gracePeriod,
   //   };
 
-  //   // try {
-  //   // const response = await axios.post(
-  //   //   `http://10.203.14.73:3000/v1/api/license/generate-license`,
-  //   //   formData
-  //   // );
   //   console.log("Form Data:", formData);
-  //   // console.log("Response:", response.data);
-  //   // setResponse(response.data);
-  //   // setError(null);
 
-  //   // Download the response
-  //   //   const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
-  //   //     type: "text/plain",
-  //   //   });
-  //   //   const url = window.URL.createObjectURL(blob);
-  //   //   const a = document.createElement("a");
-  //   //   a.href = url;
-  //   //   a.download = "response.txt";
-  //   //   a.click();
-  //   //   window.URL.revokeObjectURL(url);
-  //   // } catch (error) {
-  //   //   console.error("Error generating license:", error);
-  //   //   setError(error);
-  //   //   setResponse(null);
-  //   // }
+  //   // Uncomment the below code for actual API call
+  //   try {
+  //     const response = await axios.post(
+  //       `http://10.203.14.73:3000/v1/api/license/generate-license`,
+  //       formData
+  //     );
+  //     console.log("Response:", response.data);
+  //     setResponse(response.data);
+  //     setError(null);
+
+  //     // Download the response
+  //     const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+  //       type: "text/plain",
+  //     });
+  //     const url = window.URL.createObjectURL(blob);
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = "response.txt";
+  //     a.click();
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (error) {
+  //     console.error("Error generating license:", error);
+  //     setError(error);
+  //     setResponse(null);
+  //   }
   // };
 
   const handleSave = async () => {
+    if (
+      dayjs(notificationStart).isBefore(startDate) ||
+      dayjs(notificationStart).isAfter(endDate)
+    ) {
+      setValidationError(
+        "Notification start date must be between start date and end date."
+      );
+      setOpen(true); // Open the modal to show the validation error
+      return;
+    }
+
+    // Reset validation error if the date is valid
+    setValidationError("");
+
     // Find the notification frequency id based on the selectedNotificationFreq
     const notificationFreqObj = notificationFreq.find(
       (freq) => freq.code_desc === selectedNotificationFreq
@@ -164,6 +209,7 @@ const Initial = () => {
       console.log("Response:", response.data);
       setResponse(response.data);
       setError(null);
+      setOpen(true); // Open the modal to show the response
 
       // Download the response
       const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
@@ -179,30 +225,10 @@ const Initial = () => {
       console.error("Error generating license:", error);
       setError(error);
       setResponse(null);
+      setOpen(true); // Open the modal to show the error
     }
   };
 
-  // const calculateEndDate = (startDate, frequency) => {
-  //   const start = dayjs(startDate);
-  //   let end;
-  //   switch (frequency) {
-  //     case "Monthly":
-  //       end = start.add(1, "month");
-  //       break;
-  //     case "Quarterly":
-  //       end = start.add(3, "month");
-  //       break;
-  //     case "Semiannually":
-  //       end = start.add(6, "month");
-  //       break;
-  //     case "Annually":
-  //       end = start.add(1, "year");
-  //       break;
-  //     default:
-  //       end = start;
-  //   }
-  //   return end.format("YYYY-MM-DD");
-  // };
   useEffect(() => {
     if (startDate && selectedFrequency) {
       console.log(
@@ -375,6 +401,10 @@ const Initial = () => {
               </FormControl>
             </Stack>
 
+            {validationError && (
+              <Alert type="error" message={validationError} showIcon />
+            )}
+
             <div>
               <Stack direction="row" spacing={4}>
                 <FormControl sx={{ width: "47.5%" }}>
@@ -412,7 +442,7 @@ const Initial = () => {
               </Button>
             </CardActions>
           </CardOverflow>
-          <Modal
+          {/* <Modal
             aria-labelledby="modal-title"
             aria-describedby="modal-desc"
             open={open}
@@ -482,6 +512,83 @@ const Initial = () => {
                     subTitle="Please check and modify the following information before resubmitting."
                   />
                 )}
+              </Typography>
+            </Sheet>
+          </Modal> */}
+          <Modal
+            aria-labelledby="modal-title"
+            aria-describedby="modal-desc"
+            open={open}
+            onClose={() => setOpen(false)}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  backdropFilter: "none",
+                }, // Example backdrop styling
+              },
+            }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginLeft: "15%",
+            }}
+          >
+            <Sheet
+              variant="outlined"
+              sx={{
+                maxWidth: 500,
+                borderRadius: "md",
+                p: 3,
+                boxShadow: "lg",
+              }}
+            >
+              <ModalClose variant="plain" sx={{ m: 1 }} />
+              <Typography id="modal-desc" textColor="text.tertiary">
+                {validationError ? (
+                  <Result
+                    status="error"
+                    title="Validation Error"
+                    subTitle={validationError}
+                  />
+                ) : response && response.code === "200" ? (
+                  <Result
+                    status="success"
+                    title={response.result}
+                    subTitle="Your license has been successfully generated."
+                    extra={[
+                      <Button
+                        type="primary"
+                        key="console"
+                        onClick={() => {
+                          const subject = encodeURIComponent(
+                            "License Information"
+                          );
+                          const body = encodeURIComponent(
+                            `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${JSON.stringify(
+                              response.data,
+                              null,
+                              2
+                            )}\n\nBest regards,\nYour Company`
+                          );
+                          window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                        }}
+                      >
+                        Send Mail
+                      </Button>,
+                      <Button key="buy" onClick={() => setOpen(false)}>
+                        Generate Another License
+                      </Button>,
+                    ]}
+                  />
+                ) : error ? (
+                  <Result
+                    status="error"
+                    title={error.response.data.result}
+                    subTitle="Please check and modify the following information before resubmitting."
+                  />
+                ) : null}
               </Typography>
             </Sheet>
           </Modal>

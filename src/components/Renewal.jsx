@@ -30,6 +30,8 @@ const Renewal = () => {
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [notificationDate, setNotificationDate] = useState("");
+  const [selectedNotificationFreq, setSelectedNotificationFreq] = useState("");
 
   function frontendDate(dateString) {
     const originalDate = new Date(dateString);
@@ -64,6 +66,36 @@ const Renewal = () => {
     fetchBankNames();
   }, []);
 
+  // const handleSave = async () => {
+  //   const formData = {
+  //     bank_id: bankId,
+  //     license_type_id: details.license_type_id,
+  //     license_frequency_id: details.license_frequency_id,
+  //     start_date: details.start_date,
+  //     end_date: endDate,
+  //     notification_start: notificationDate,
+  //     notification_frequency_id: details.notification_frequency_id,
+  //     grace_period: details.grace_period,
+  //   };
+  //   try {
+  //     const response = await axios.post(
+  //       "http://10.203.14.73:3000/v1/api/license/reactivate-license",
+  //       formData
+  //     );
+  //     console.log("Save response:", response);
+  //     console.log("Saved details:", formData);
+  //     setResponse(response);
+  //     // Add any additional handling for success (e.g., displaying a success message)
+  //   } catch (error) {
+  //     console.error("Error saving details:", error);
+  //     console.log("Error details:", formData);
+  //     setError(error);
+  //     setResponse(null);
+
+  //     // Add any additional handling for error (e.g., displaying an error message)
+  //   }
+  // };
+
   const handleSave = async () => {
     const formData = {
       bank_id: bankId,
@@ -71,7 +103,7 @@ const Renewal = () => {
       license_frequency_id: details.license_frequency_id,
       start_date: details.start_date,
       end_date: endDate,
-      notification_start: details.notification_start,
+      notification_start: notificationDate,
       notification_frequency_id: details.notification_frequency_id,
       grace_period: details.grace_period,
     };
@@ -83,6 +115,17 @@ const Renewal = () => {
       console.log("Save response:", response);
       console.log("Saved details:", formData);
       setResponse(response);
+
+      // // Clear form upon successful save
+      // if (response.status === 200) {
+      //   setSelectedBank("");
+      // }
+
+      // if (response.data.code === "200") {
+      //   setSelectedBank("");
+      //   setBankId("");
+      // }
+
       // Add any additional handling for success (e.g., displaying a success message)
     } catch (error) {
       console.error("Error saving details:", error);
@@ -119,6 +162,12 @@ const Renewal = () => {
           response.data.message[0].license_frequency
         )
       );
+      setNotificationDate(
+        calculateNotificationDate(
+          response.data.message[0].notification_start,
+          response.data.message[0].license_frequency
+        )
+      );
     } catch (error) {
       console.error("Error:", error);
     }
@@ -150,6 +199,58 @@ const Renewal = () => {
     return end.format("YYYY-MM-DD");
   };
 
+  const calculateNotificationDate = (notification_start, frequency) => {
+    const start = dayjs(notification_start);
+    let end;
+    switch (frequency) {
+      case "Monthly":
+        end = start.add(1, "month");
+        break;
+      case "Quarterly":
+        end = start.add(3, "month");
+        break;
+      case "Semiannually":
+        end = start.add(6, "month");
+        break;
+      case "Annually":
+        end = start.add(1, "year");
+        break;
+      default:
+        end = start;
+    }
+    return end.format("YYYY-MM-DD");
+  };
+
+  const calculateNotificationFrequency = (
+    startDate,
+    endDate,
+    notificationStart
+  ) => {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const notification = dayjs(notificationStart);
+
+    const totalDays = end.diff(start, "day");
+    const notificationDays = end.diff(notification, "day");
+
+    if (notificationDays <= 14) {
+      return "Daily";
+    } else if (notificationDays <= 60) {
+      return "Weekly";
+    } else {
+      return "Monthly";
+    }
+  };
+
+  useEffect(() => {
+    setSelectedNotificationFreq(
+      calculateNotificationFrequency(
+        details.startDate,
+        endDate,
+        notificationDate
+      )
+    );
+  }, [details.startDate, endDate, notificationDate]);
   return (
     <div>
       <div>
@@ -249,7 +350,7 @@ const Renewal = () => {
                     size="sm"
                     type="date"
                     disabled
-                    value={frontendDate(details.notification_start)}
+                    value={notificationDate}
                   />
                 </FormControl>
                 <FormControl sx={{ width: "100%" }}>
@@ -258,6 +359,7 @@ const Renewal = () => {
                     size="sm"
                     disabled
                     value={details.notification_frequency}
+                    // value={selectedNotificationFreq}
                   />
                 </FormControl>
               </Stack>
@@ -283,7 +385,10 @@ const Renewal = () => {
                   size="sm"
                   variant="solid"
                   sx={{ backgroundColor: "#00357A" }}
-                  onClick={handleSave}
+                  onClick={() => {
+                    setOpen(true);
+                    handleSave();
+                  }}
                 >
                   Save
                 </Button>
@@ -346,7 +451,7 @@ const Renewal = () => {
                           Send Mail
                         </Button>,
                         <Button key="buy" onClick={() => setOpen(false)}>
-                          Generate Another License
+                          Renew Another License
                         </Button>,
                       ]}
                     />

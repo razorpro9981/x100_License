@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Avatar from "@mui/joy/Avatar";
+
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Chip from "@mui/joy/Chip";
@@ -9,30 +9,23 @@ import FormLabel from "@mui/joy/FormLabel";
 import Link from "@mui/joy/Link";
 import Input from "@mui/joy/Input";
 import Modal from "@mui/joy/Modal";
-import ModalDialog from "@mui/joy/ModalDialog";
-import ModalClose from "@mui/joy/ModalClose";
+
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import Table from "@mui/joy/Table";
 import Sheet from "@mui/joy/Sheet";
-import Checkbox from "@mui/joy/Checkbox";
+
 import IconButton from "@mui/joy/IconButton";
 import Typography from "@mui/joy/Typography";
-import Menu from "@mui/joy/Menu";
-import MenuButton from "@mui/joy/MenuButton";
-import MenuItem from "@mui/joy/MenuItem";
-import Dropdown from "@mui/joy/Dropdown";
+
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import BlockIcon from "@mui/icons-material/Block";
-import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+
 import CreateIcon from "@mui/icons-material/Create";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+
 import Card from "@mui/joy/Card";
 import CardActions from "@mui/joy/CardActions";
 import CardOverflow from "@mui/joy/CardOverflow";
@@ -72,22 +65,69 @@ export default function Amendment() {
   const [selected, setSelected] = useState([]);
   const [open, setOpen] = useState(false);
   const [details, setDetails] = useState([]);
+  const [bankId, setBankId] = useState(null);
+  const [formDetails, setFormDetails] = useState({});
+  const [licenseType, setLicenseType] = useState([]);
+  const [frequency, setFrequency] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [noficationStart, setNotificationStartDate] = useState("");
 
+  function frontendDate(dateString) {
+    const originalDate = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(originalDate?.getTime())) {
+      return ""; // Return empty string for invalid dates
+    }
+
+    const day = ("0" + originalDate.getDate())?.slice(-2); // Ensures leading zero if needed
+    const month = ("0" + (originalDate.getMonth() + 1))?.slice(-2); // Adding leading zero if needed
+    const year = originalDate.getFullYear();
+
+    const formattedDate = `${year}-${month}-${day}`;
+    console.log(formattedDate);
+    return formattedDate.toUpperCase();
+  }
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `http://10.203.14.73:3000/v1/api/license/get-param?code_type="Bank"`
+        `http://10.203.14.73:3000/v1/api/license/get-licensed-banks`
       );
       console.log("Save response:", response.data);
-      setDetails(response.data.result);
+      setDetails(response.data.message);
     } catch (error) {
       console.error("Error saving details:", error);
+    }
+  };
+
+  const fetchDetails = async (bankId) => {
+    try {
+      const response = await axios.post(
+        "http://10.203.14.73:3000/v1/api/license/get-bank-details",
+        {
+          bank_id: bankId,
+        }
+      );
+      console.log("Response:", response.data);
+      setFormDetails(response.data.message[0]);
+      setStartDate(frontendDate(response.data.message[0]?.start_date) || "");
+      setNotificationStartDate(
+        frontendDate(response.data.message[0]?.notification_start) || ""
+      );
+    } catch (error) {
+      console.error("Error:", error);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (bankId !== null) {
+      fetchDetails(bankId);
+    }
+  }, [bankId]);
 
   const renderFilters = () => (
     <React.Fragment>
@@ -115,6 +155,33 @@ export default function Amendment() {
       </FormControl>
     </React.Fragment>
   );
+
+  useEffect(() => {
+    const fetchBankNames = async () => {
+      try {
+        const response = await axios.get(
+          `http://10.203.14.73:3000/v1/api/license/get-license-parameters`
+        );
+        // setBankNames(response.data.bankParams);
+        setLicenseType(response.data.licenseTypeParams);
+        setFrequency(response.data.licenseFrequencyParams);
+        // setNotificationFreq(response.data.notificationFrequencyParams);
+        console.log("Bank names:", response.data);
+      } catch (error) {
+        console.error("Error fetching bank names:", error);
+      }
+    };
+
+    fetchBankNames();
+  }, []);
+
+  const handleStartDateChange = (event) => {
+    setStartDate(event.target.value);
+  };
+
+  const handleNotificationStartChange = (event) => {
+    setNotificationStartDate(event.target.value);
+  };
 
   return (
     <React.Fragment>
@@ -221,13 +288,13 @@ export default function Amendment() {
           </thead>
           <tbody>
             {stableSort(details, getComparator(order, "id")).map((row) => (
-              <tr key={row.id}>
+              <tr key={row.bank_id}>
                 <td style={{ textAlign: "center", width: 120 }}></td>
                 <td className="font-semibold text-sm ">
-                  <Typography level="body-sm">{row.id}</Typography>
+                  <Typography level="body-sm">{row.bank_id}</Typography>
                 </td>
                 <td className="font-semibold text-sm ">
-                  <Typography level="body-sm">{row.code_desc}</Typography>
+                  <Typography level="body-sm">{row.bank_desc}</Typography>
                 </td>
                 <td className="font-semibold text-sm ">
                   <Chip
@@ -246,7 +313,10 @@ export default function Amendment() {
                 <td>
                   <Button
                     sx={{ backgroundColor: "#00357A", width: 35 }}
-                    onClick={() => setOpen(true)}
+                    onClick={() => {
+                      setBankId(row.bank_id);
+                      setOpen(true);
+                    }}
                     size="sm"
                     variant="solid"
                   >
@@ -258,51 +328,6 @@ export default function Amendment() {
           </tbody>
         </Table>
       </Sheet>
-      {/* <Modal open={open} onClose={() => setOpen(false)}>
-        <ModalDialog
-          aria-labelledby="alert-dialog-modal-title"
-          aria-describedby="alert-dialog-modal-description"
-          sx={{ maxWidth: 500 }}
-        >
-          <ModalClose />
-          <Typography id="alert-dialog-modal-title" component="h2">
-            Amend
-          </Typography>
-          <Divider sx={{ my: 2 }} />
-          <Typography
-            id="alert-dialog-modal-description"
-            textColor="text.tertiary"
-          >
-            Are you sure you want to amend?
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 1,
-              justifyContent: "flex-end",
-              pt: 2,
-            }}
-          >
-            <Button
-              variant="plain"
-              color="neutral"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="solid"
-              color="primary"
-              onClick={() => {
-                console.log("Amend confirmed");
-                setOpen(false);
-              }}
-            >
-              Confirm
-            </Button>
-          </Box>
-        </ModalDialog>
-      </Modal> */}
       <Modal
         aria-labelledby="modal-title"
         aria-describedby="modal-desc"
@@ -312,13 +337,20 @@ export default function Amendment() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          // width: "10000px",
+          marginLeft: "15%",
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "none",
+            }, // Example backdrop styling
+          },
         }}
       >
         <Card>
           <Box
             sx={{
-              // mb: 1,
               width: 700,
               backgroundColor: "#00357A",
               padding: 1,
@@ -327,9 +359,6 @@ export default function Amendment() {
             <Typography sx={{ ml: 0.5, color: "white" }} level="title-lg">
               Edit Bank Details
             </Typography>
-            {/* <Typography level="body-sm">
-                  Fill the form to generate encrypted key
-                </Typography> */}
           </Box>
           <Divider />
           <Stack spacing={4}>
@@ -339,12 +368,13 @@ export default function Amendment() {
                 <Select
                   size="sm"
                   startDecorator={<AccountBalanceIcon />}
-                  defaultValue="1"
+                  value={formDetails.bank_desc || ""}
                   placeholder="Select Bank"
                   disabled
                 >
-                  <Option value="1">Standard Chartered Bank</Option>
-                  <Option value="2">Rokel Commercial Bank</Option>
+                  <Option value={formDetails.bank_desc}>
+                    {formDetails.bank_desc}
+                  </Option>
                 </Select>
               </FormControl>
             </Stack>
@@ -352,20 +382,36 @@ export default function Amendment() {
             <Stack direction="row" spacing={4}>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>License Type</FormLabel>
-                <Select size="sm" defaultValue="1" placeholder="Select Type">
-                  <Option value="1">One Time</Option>
-                  <Option value="2">Subscription</Option>
+                <Select
+                  size="sm"
+                  // defaultValue={formDetails.license_type}
+                  placeholder={formDetails.license_type}
+                >
+                  {/* <Option value={formDetails.license_type}>
+                    {formDetails.license_type}
+                  </Option> */}
+                  {licenseType.map((freq) => (
+                    <Option key={freq.id} value={freq.id}>
+                      {freq.code_desc}
+                    </Option>
+                  ))}
                 </Select>
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Frequency</FormLabel>
                 <Select
                   size="sm"
-                  defaultValue="2"
-                  placeholder="Select Frequency"
+                  // defaultValue={formDetails.license_frequency}
+                  placeholder={formDetails.license_frequency}
                 >
-                  <Option value="1">Monthly</Option>
-                  <Option value="2">Quarterly</Option>
+                  {/* <Option value={formDetails.license_frequency}>
+                    {formDetails.license_frequency}
+                  </Option> */}
+                  {frequency.map((freq) => (
+                    <Option key={freq.id} value={freq.id}>
+                      {freq.code_desc}
+                    </Option>
+                  ))}
                 </Select>
               </FormControl>
             </Stack>
@@ -373,34 +419,46 @@ export default function Amendment() {
             <Stack direction="row" spacing={4}>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Start Date</FormLabel>
-                <Input size="sm" type="date" />
+                <Input
+                  size="sm"
+                  type="date"
+                  value={startDate}
+                  onChange={handleStartDateChange}
+
+                  // placeholder={formDetails.start_date}
+                />
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>End Date</FormLabel>
-                <Input size="sm" type="date" disabled />
+                <Input
+                  size="sm"
+                  type="date"
+                  value={formDetails.end_date?.slice(0, 10) || ""}
+                  disabled
+                />
               </FormControl>
             </Stack>
             <Stack direction="row" spacing={4}>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Notification Start</FormLabel>
-                <Select
+                <Input
                   size="sm"
-                  defaultValue="1"
-                  placeholder="Select Notification"
-                >
-                  <Option value="1">30 Days Before</Option>
-                  <Option value="2">15 Days Before</Option>
-                </Select>
+                  type="date"
+                  // value={formDetails.notification_start?.slice(0, 10) || ""}
+                  value={noficationStart}
+                  onChange={handleNotificationStartChange}
+                />
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Notification Frequency</FormLabel>
                 <Select
                   size="sm"
-                  defaultValue="1"
+                  value={formDetails.notification_frequency || ""}
                   placeholder="Select Notification"
                 >
-                  <Option value="1">Daily</Option>
-                  <Option value="2">Weekly</Option>
+                  <Option value={formDetails.notification_frequency}>
+                    {formDetails.notification_frequency}
+                  </Option>
                 </Select>
               </FormControl>
             </Stack>
@@ -409,14 +467,12 @@ export default function Amendment() {
               <Stack direction="row" spacing={4}>
                 <FormControl sx={{ width: "100%" }}>
                   <FormLabel>Grace Period</FormLabel>
-                  <Select
+                  <Input
                     size="sm"
-                    defaultValue="1"
-                    placeholder="Select Grace Period"
-                  >
-                    <Option value="1">10 Days</Option>
-                    <Option value="2">5 Days</Option>
-                  </Select>
+                    value={formDetails.grace_period || ""}
+                    placeholder="Grace Period"
+                    disabled
+                  />
                 </FormControl>
               </Stack>
             </div>
@@ -424,14 +480,11 @@ export default function Amendment() {
 
           <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
             <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
-              {/* <Button size="sm" variant="outlined" color="neutral">
-                    Clear
-                  </Button> */}
               <Button
                 size="sm"
                 variant="solid"
                 sx={{ backgroundColor: "#00357A" }}
-                onClick={() => setOpen(true)}
+                onClick={() => setOpen(false)}
               >
                 Save
               </Button>
