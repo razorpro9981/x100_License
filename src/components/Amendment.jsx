@@ -9,28 +9,26 @@ import FormLabel from "@mui/joy/FormLabel";
 import Link from "@mui/joy/Link";
 import Input from "@mui/joy/Input";
 import Modal from "@mui/joy/Modal";
-
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import Table from "@mui/joy/Table";
 import Sheet from "@mui/joy/Sheet";
-
 import IconButton from "@mui/joy/IconButton";
 import Typography from "@mui/joy/Typography";
-
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-
 import CreateIcon from "@mui/icons-material/Create";
-
 import Card from "@mui/joy/Card";
 import CardActions from "@mui/joy/CardActions";
 import CardOverflow from "@mui/joy/CardOverflow";
 import Stack from "@mui/joy/Stack";
 import axios from "axios";
+import dayjs from "dayjs";
+import { ModalClose } from "@mui/joy";
+import { Result } from "antd";
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -71,6 +69,18 @@ export default function Amendment() {
   const [frequency, setFrequency] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [noficationStart, setNotificationStartDate] = useState("");
+  const [selectedLicenseType, setSelectedLicenseType] = useState("");
+  const [endDateChange, setEndDateChange] = useState("");
+  const [selectedLicenseDesc, setSelectedLicenseDesc] = useState("");
+  const [selectedFrequency, setSelectedFrequency] = useState("");
+  const [selectedFreqDesc, setSelectedFreqDesc] = useState("");
+  const [selectedNotificationFreq, setSelectedNotificationFreq] = useState("");
+  const [validationError, setValidationError] = useState("");
+  const [notificationFreq, setNotificationFreq] = useState([]);
+  const [gracePeriod, setGracePeriod] = useState("");
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [confirm, setConfirm] = useState(false);
 
   function frontendDate(dateString) {
     const originalDate = new Date(dateString);
@@ -110,10 +120,16 @@ export default function Amendment() {
       );
       console.log("Response:", response.data);
       setFormDetails(response.data.message[0]);
+      setSelectedLicenseType(response.data.message[0]?.license_type_id);
+      setSelectedLicenseDesc(response.data.message[0]?.license_type);
+      setSelectedFrequency(response.data.message[0]?.license_frequency_id);
+      setSelectedFreqDesc(response.data.message[0]?.license_frequency);
+      setEndDateChange(frontendDate(response.data.message[0]?.end_date) || "");
       setStartDate(frontendDate(response.data.message[0]?.start_date) || "");
       setNotificationStartDate(
         frontendDate(response.data.message[0]?.notification_start) || ""
       );
+      setGracePeriod(response.data.message[0]?.grace_period);
     } catch (error) {
       console.error("Error:", error);
     }
@@ -163,9 +179,10 @@ export default function Amendment() {
           `http://10.203.14.73:3000/v1/api/license/get-license-parameters`
         );
         // setBankNames(response.data.bankParams);
+        // setSelectedLicenseType(response.data.licenseTypeParams[0].id);
         setLicenseType(response.data.licenseTypeParams);
         setFrequency(response.data.licenseFrequencyParams);
-        // setNotificationFreq(response.data.notificationFrequencyParams);
+        setNotificationFreq(response.data.notificationFrequencyParams);
         console.log("Bank names:", response.data);
       } catch (error) {
         console.error("Error fetching bank names:", error);
@@ -183,6 +200,191 @@ export default function Amendment() {
     setNotificationStartDate(event.target.value);
   };
 
+  const endDateChangeFunction = (event) => {
+    setEndDateChange(event.target.value);
+  };
+
+  const handleLicenseTypeChange = (event) => {
+    console.log("the new event !!", event.target.value);
+    setSelectedLicenseType(event.target.value);
+  };
+
+  console.log("selected license type ", selectedLicenseType);
+
+  useEffect(() => {
+    if (startDate && selectedFrequency) {
+      setEndDateChange(calculateEndDate(startDate, selectedFrequency));
+    }
+  }, [startDate, selectedFrequency]);
+
+  useEffect(() => {
+    if (startDate && selectedFrequency) {
+      console.log(
+        "Calculating end date with startDate:",
+        startDate,
+        "and selectedFrequency:",
+        selectedFrequency
+      );
+      setEndDateChange(calculateEndDate(startDate, selectedFrequency));
+    }
+  }, [startDate, selectedFrequency]);
+
+  const calculateEndDate = (startDate, frequencyId) => {
+    const start = dayjs(startDate);
+    let end;
+
+    // Find the frequency object based on the frequencyId
+    const frequencyObj = frequency.find((freq) => freq.id === frequencyId);
+
+    if (frequencyObj) {
+      switch (frequencyObj.code_desc) {
+        case "Monthly":
+          end = start.add(1, "month");
+          break;
+        case "Quarterly":
+          end = start.add(3, "month");
+          break;
+        case "Semiannually":
+          end = start.add(6, "month");
+          break;
+        case "Annually":
+          end = start.add(1, "year");
+          break;
+        default:
+          end = start;
+      }
+    } else {
+      end = start;
+    }
+
+    console.log("Calculated end date:", end.format("YYYY-MM-DD"));
+    return end.format("YYYY-MM-DD");
+  };
+
+  useEffect(() => {
+    if (startDate && endDateChange && noficationStart) {
+      if (
+        dayjs(noficationStart).isBefore(startDate) ||
+        dayjs(noficationStart).isAfter(endDateChange)
+      ) {
+        setValidationError(
+          "Notification start date must be between start date and end date."
+        );
+      } else {
+        setValidationError("");
+        setSelectedNotificationFreq(
+          calculateNotificationFrequency(
+            startDate,
+            endDateChange,
+            noficationStart
+          )
+        );
+      }
+    }
+  }, [startDate, endDateChange, noficationStart]);
+
+  const calculateNotificationFrequency = (
+    startDate,
+    endDate,
+    notificationStart
+  ) => {
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const notification = dayjs(notificationStart);
+
+    const totalDays = end.diff(start, "day");
+    const notificationDays = end.diff(notification, "day");
+
+    if (notificationDays <= 14) {
+      return "Daily";
+    } else if (notificationDays <= 60) {
+      return "Weekly";
+    } else {
+      return "Monthly";
+    }
+  };
+
+  const notificationFreqObj = notificationFreq.find(
+    (freq) => freq.code_desc === selectedNotificationFreq
+  );
+  const notificationFrequencyId = notificationFreqObj
+    ? notificationFreqObj.id
+    : "";
+
+  const handleSave = async () => {
+    const formPush = {
+      bankId,
+      selectedFrequency,
+      selectedLicenseType,
+      startDate,
+      endDateChange,
+      noficationStart,
+      notificationFreq,
+      gracePeriod,
+    };
+    if (
+      dayjs(noficationStart).isBefore(startDate) ||
+      dayjs(noficationStart).isAfter(endDateChange)
+    ) {
+      setValidationError(
+        "Notification start date must be between start date and end date."
+      );
+      setConfirm(true); // Open the modal to show the validation error
+      return;
+    }
+
+    // Reset validation error if the date is valid
+    setValidationError("");
+
+    // Find the notification frequency id based on the selectedNotificationFreq
+    const notificationFreqObj = notificationFreq.find(
+      (freq) => freq.code_desc === selectedNotificationFreq
+    );
+    const notificationFrequencyId = notificationFreqObj
+      ? notificationFreqObj.id
+      : "";
+
+    const formData = {
+      bank_id: bankId,
+      license_type_id: selectedLicenseType,
+      license_frequency_id: selectedFrequency,
+      notification_frequency_id: notificationFrequencyId,
+      start_date: startDate,
+      end_date: endDateChange,
+      notification_start: noficationStart,
+      grace_period: gracePeriod,
+    };
+
+    console.log("Form Data:", formData);
+
+    // Uncomment the below code for actual API call
+    try {
+      const response = await axios.put(
+        `http://10.203.14.73:3000/v1/api/license/amend-license-details`,
+        formData
+      );
+      console.log("Response:", response.data);
+      setResponse(response.data);
+      setError(null);
+      setConfirm(true); // Open the modal to show the response
+
+      // Download the response
+      // const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+      //   type: "text/plain",
+      // });
+      // const url = window.URL.createObjectURL(blob);
+      // const a = document.createElement("a");
+      // a.href = url;
+      // a.download = "response.txt";
+      // a.click();
+      // window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating license:", error);
+      setError(error);
+      setResponse(null);
+      setConfirm(true); // Open the modal to show the error
+    }
+  };
   return (
     <React.Fragment>
       <Sheet
@@ -384,11 +586,17 @@ export default function Amendment() {
                 <FormLabel>License Type</FormLabel>
                 <Select
                   size="sm"
-                  // defaultValue={formDetails.license_type}
-                  placeholder={formDetails.license_type}
+                  // value={formDetails.license_type}
+                  value={selectedLicenseType}
+                  placeholder={selectedLicenseDesc}
+                  // onChange={handleLicenseTypeChange}
+                  onChange={(e, newValue) => setSelectedLicenseType(newValue)}
                 >
-                  {/* <Option value={formDetails.license_type}>
-                    {formDetails.license_type}
+                  {/* <Option
+                    value={selectedLicenseType}
+                    children={selectedLicenseDesc}
+                  >
+                    {selectedLicenseDesc}
                   </Option> */}
                   {licenseType.map((freq) => (
                     <Option key={freq.id} value={freq.id}>
@@ -401,12 +609,16 @@ export default function Amendment() {
                 <FormLabel>Frequency</FormLabel>
                 <Select
                   size="sm"
-                  // defaultValue={formDetails.license_frequency}
-                  placeholder={formDetails.license_frequency}
+                  value={selectedFrequency}
+                  placeholder={selectedFreqDesc}
+                  // renderValue={selectedFreqDesc}
+                  onChange={(e, newValue) => setSelectedFrequency(newValue)}
                 >
-                  {/* <Option value={formDetails.license_frequency}>
-                    {formDetails.license_frequency}
-                  </Option> */}
+                  {/* <Option
+                    value={selectedFrequency}
+                    children={selectedFreqDesc}
+                  /> */}
+
                   {frequency.map((freq) => (
                     <Option key={freq.id} value={freq.id}>
                       {freq.code_desc}
@@ -424,7 +636,6 @@ export default function Amendment() {
                   type="date"
                   value={startDate}
                   onChange={handleStartDateChange}
-
                   // placeholder={formDetails.start_date}
                 />
               </FormControl>
@@ -433,8 +644,9 @@ export default function Amendment() {
                 <Input
                   size="sm"
                   type="date"
-                  value={formDetails.end_date?.slice(0, 10) || ""}
-                  disabled
+                  value={endDateChange}
+                  onChange={endDateChangeFunction}
+                  // disabled
                 />
               </FormControl>
             </Stack>
@@ -451,27 +663,34 @@ export default function Amendment() {
               </FormControl>
               <FormControl sx={{ width: "100%" }}>
                 <FormLabel>Notification Frequency</FormLabel>
-                <Select
+                {/* <Select
                   size="sm"
                   value={formDetails.notification_frequency || ""}
                   placeholder="Select Notification"
-                >
-                  <Option value={formDetails.notification_frequency}>
-                    {formDetails.notification_frequency}
-                  </Option>
-                </Select>
+                  onChange={(e, newValue) =>
+                    setSelectedNotificationFreq(newValue)
+                  }
+                > */}
+                <Input
+                  size="sm"
+                  type="text"
+                  value={selectedNotificationFreq}
+                  readOnly
+                />
+
+                {/* </Select> */}
               </FormControl>
             </Stack>
 
             <div>
               <Stack direction="row" spacing={4}>
-                <FormControl sx={{ width: "100%" }}>
+                <FormControl sx={{ width: "48%" }}>
                   <FormLabel>Grace Period</FormLabel>
                   <Input
                     size="sm"
-                    value={formDetails.grace_period || ""}
+                    value={gracePeriod}
                     placeholder="Grace Period"
-                    disabled
+                    onChange={(e, newValue) => setGracePeriod(newValue)}
                   />
                 </FormControl>
               </Stack>
@@ -484,11 +703,92 @@ export default function Amendment() {
                 size="sm"
                 variant="solid"
                 sx={{ backgroundColor: "#00357A" }}
-                onClick={() => setOpen(false)}
+                // onClick={() => setOpen(false)}
+                onClick={() => {
+                  setConfirm(true);
+                  handleSave();
+                }}
               >
                 Save
               </Button>
             </CardActions>
+            <Modal
+              aria-labelledby="modal-title"
+              aria-describedby="modal-desc"
+              open={confirm}
+              onClose={() => setConfirm(false)}
+              slotProps={{
+                backdrop: {
+                  sx: {
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                    backdropFilter: "none",
+                  }, // Example backdrop styling
+                },
+              }}
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginLeft: "15%",
+              }}
+            >
+              <Sheet
+                variant="outlined"
+                sx={{
+                  maxWidth: 500,
+                  borderRadius: "md",
+                  p: 3,
+                  boxShadow: "lg",
+                }}
+              >
+                <ModalClose variant="plain" sx={{ m: 1 }} />
+                <Typography id="modal-desc" textColor="text.tertiary">
+                  {validationError ? (
+                    <Result
+                      status="error"
+                      title="Validation Error"
+                      subTitle={validationError}
+                    />
+                  ) : response && response.code === "200" ? (
+                    <Result
+                      status="success"
+                      title={response.result}
+                      // subTitle="Your license has been successfully generated."
+                      // extra={[
+                      //   <Button
+                      //     type="primary"
+                      //     key="console"
+                      //     onClick={() => {
+                      //       const subject = encodeURIComponent(
+                      //         "License Information"
+                      //       );
+                      //       const body = encodeURIComponent(
+                      //         `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${JSON.stringify(
+                      //           response.data,
+                      //           null,
+                      //           2
+                      //         )}\n\nBest regards,\nYour Company`
+                      //       );
+                      //       window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                      //     }}
+                      //   >
+                      //     Send Mail
+                      //   </Button>,
+                      //   <Button key="buy" onClick={() => setOpen(false)}>
+                      //     Generate Another License
+                      //   </Button>,
+                      // ]}
+                    />
+                  ) : error ? (
+                    <Result
+                      status="error"
+                      title={error.response.data.result}
+                      subTitle="Please check and modify the following information before resubmitting."
+                    />
+                  ) : null}
+                </Typography>
+              </Sheet>
+            </Modal>
           </CardOverflow>
         </Card>
       </Modal>

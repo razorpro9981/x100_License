@@ -105,65 +105,6 @@ const Initial = () => {
     setValidationError("");
   };
 
-  // const handleSave = async () => {
-  //   if (
-  //     dayjs(notificationStart).isBefore(startDate) ||
-  //     dayjs(notificationStart).isAfter(endDate)
-  //   ) {
-  //     setValidationError(
-  //       "Notification start date must be between start date and end date."
-  //     );
-  //     return;
-  //   }
-
-  //   // Find the notification frequency id based on the selectedNotificationFreq
-  //   const notificationFreqObj = notificationFreq.find(
-  //     (freq) => freq.code_desc === selectedNotificationFreq
-  //   );
-  //   const notificationFrequencyId = notificationFreqObj
-  //     ? notificationFreqObj.id
-  //     : "";
-
-  //   const formData = {
-  //     bank_id: selectedBank,
-  //     license_type_id: selectedLicenseType,
-  //     license_frequency_id: selectedFrequency,
-  //     notification_frequency_id: notificationFrequencyId,
-  //     start_date: startDate,
-  //     end_date: endDate,
-  //     notification_start: notificationStart,
-  //     grace_period: gracePeriod,
-  //   };
-
-  //   console.log("Form Data:", formData);
-
-  //   // Uncomment the below code for actual API call
-  //   try {
-  //     const response = await axios.post(
-  //       `http://10.203.14.73:3000/v1/api/license/generate-license`,
-  //       formData
-  //     );
-  //     console.log("Response:", response.data);
-  //     setResponse(response.data);
-  //     setError(null);
-
-  //     // Download the response
-  //     const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
-  //       type: "text/plain",
-  //     });
-  //     const url = window.URL.createObjectURL(blob);
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = "response.txt";
-  //     a.click();
-  //     window.URL.revokeObjectURL(url);
-  //   } catch (error) {
-  //     console.error("Error generating license:", error);
-  //     setError(error);
-  //     setResponse(null);
-  //   }
-  // };
-
   const handleSave = async () => {
     if (
       dayjs(notificationStart).isBefore(startDate) ||
@@ -319,6 +260,7 @@ const Initial = () => {
               <FormLabel required>Bank Name</FormLabel>
               <FormControl sx={{ width: "100%" }}>
                 <Select
+                  autoFocus={true}
                   size="sm"
                   startDecorator={<AccountBalanceIcon />}
                   defaultValue="0"
