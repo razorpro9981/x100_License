@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Alert } from "antd"; // Import Alert from antd
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Divider from "@mui/joy/Divider";
@@ -18,16 +19,19 @@ import Card from "@mui/joy/Card";
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import axios from "axios";
+import { Result } from "antd";
 
 const Params = () => {
   const [open, setOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [formValues, setFormValues] = useState({
     CodeType: "",
-    CodeDesc: "", // Initialize CodeDesc in formValues
+    CodeDesc: "",
     Status: "Active",
   });
-
+  const [showAlert, setShowAlert] = useState(false); // State to manage alert visibility
+  const [success, setSuccess] = useState(false);
+  const [successModal, setSuccessModal] = useState(false);
   const handlePost = async () => {
     try {
       const response = await axios.post(
@@ -39,6 +43,10 @@ const Params = () => {
         }
       );
       console.log("Response:", response.data);
+
+      setSuccessModal(true);
+      setSuccess(response.data);
+      // alert("Success:", success);s
     } catch (error) {
       console.error("Error:", error);
     }
@@ -63,21 +71,11 @@ const Params = () => {
 
   const handleOpen = (row) => {
     setSelectedRow(row);
-    if (row.parameter === "Bank") {
-      setFormValues({
-        ...formValues,
-        CodeType: codeTypeMapping[row.parameter],
-        CodeDesc: row.fields[0], // Set CodeDesc to Bank Name
-        Status: "Active",
-      });
-    } else {
-      setFormValues({
-        ...formValues,
-        CodeType: codeTypeMapping[row.parameter],
-        CodeDesc: "", // Reset CodeDesc for other parameters
-        Status: "Active",
-      });
-    }
+    setFormValues({
+      CodeType: codeTypeMapping[row.parameter],
+      CodeDesc: "",
+      Status: "Active",
+    });
     setOpen(true);
   };
 
@@ -85,15 +83,23 @@ const Params = () => {
     setFormValues((prevValues) => ({
       ...prevValues,
       [field]: value,
+      ...(field === selectedRow?.fields[0] && { CodeDesc: value }),
     }));
   };
 
   const handleSave = () => {
+    if (!formValues.CodeDesc) {
+      setShowAlert(true); // Show alert if CodeDesc is empty
+      return;
+    }
+
+    setShowAlert(false); // Hide alert if validation passes
     console.log("Form Values:", formValues);
+    handlePost();
     setOpen(false);
     setFormValues({
       CodeType: "",
-      CodeDesc: "", // Reset CodeDesc along with other fields
+      CodeDesc: "",
       Status: "Active",
     });
   };
@@ -172,7 +178,10 @@ const Params = () => {
             aria-labelledby="modal-title"
             aria-describedby="modal-desc"
             open={open}
-            onClose={() => setOpen(false)}
+            onClose={() => {
+              setOpen(false);
+              setShowAlert(false);
+            }}
             slotProps={{
               backdrop: {
                 sx: {
@@ -206,6 +215,17 @@ const Params = () => {
                     </Typography>
                   </Box>
                   <Divider sx={{ marginBottom: 2 }} />
+                  {showAlert && ( // Conditionally render Alert component
+                    <Alert
+                      // message="Error"
+                      description={`Please enter ${selectedRow?.fields[0]}`}
+                      type="error"
+                      showIcon
+                      style={{ marginBottom: 16 }}
+                      closable={true}
+                      onClose={() => setShowAlert(false)} // Reset alert state on close
+                    />
+                  )}
                   <Stack spacing={2}>
                     {selectedRow.fields.map((field, idx) => (
                       <Stack spacing={1} key={idx}>
@@ -215,12 +235,6 @@ const Params = () => {
                             <Input
                               size="sm"
                               value={formValues.CodeType}
-                              disabled
-                            />
-                          ) : field === "Code Desc" ? (
-                            <Input
-                              size="sm"
-                              value={formValues.CodeDesc}
                               disabled
                             />
                           ) : field === "Status" ? (
@@ -238,6 +252,7 @@ const Params = () => {
                             <Input
                               size="sm"
                               placeholder={`Enter ${field}`}
+                              value={formValues[field]}
                               onChange={(e) =>
                                 handleInputChange(field, e.target.value)
                               }
@@ -252,16 +267,54 @@ const Params = () => {
                       size="sm"
                       variant="solid"
                       sx={{ backgroundColor: "#00357A" }}
-                      onClick={() => {
-                        handlePost();
-                        handleSave();
-                      }}
+                      onClick={handleSave}
                     >
                       Save
                     </Button>
                   </CardActions>
                 </Typography>
               )}
+            </Sheet>
+          </Modal>
+          <Modal
+            aria-labelledby="modal-title"
+            aria-describedby="modal-desc"
+            open={successModal}
+            onClose={() => setSuccessModal(false)}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  backdropFilter: "none",
+                }, // Example backdrop styling
+              },
+            }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginLeft: "15%",
+            }}
+          >
+            <Sheet
+              variant="outlined"
+              sx={{
+                maxWidth: 500,
+                borderRadius: "md",
+                p: 3,
+                boxShadow: "lg",
+              }}
+            >
+              <ModalClose variant="plain" sx={{ m: 1 }} />
+              <Typography id="modal-desc" textColor="text.tertiary">
+                {success && success.code === "200" ? (
+                  <Result
+                    status="success"
+                    title={success.result}
+                    subTitle="Parameter added successfully"
+                  />
+                ) : null}
+              </Typography>
             </Sheet>
           </Modal>
         </Card>
