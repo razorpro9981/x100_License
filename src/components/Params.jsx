@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Alert } from "antd"; // Import Alert from antd
+import React, { useState, useEffect } from "react";
+import { Alert, Result, List } from "antd"; // Import Alert, Result, and List from antd
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Divider from "@mui/joy/Divider";
@@ -19,19 +19,21 @@ import Card from "@mui/joy/Card";
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import axios from "axios";
-import { Result } from "antd";
 
 const Params = () => {
   const [open, setOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [formValues, setFormValues] = useState({
     CodeType: "",
     CodeDesc: "",
     Status: "Active",
   });
+  const [parameters, setParameters] = useState([]);
   const [showAlert, setShowAlert] = useState(false); // State to manage alert visibility
   const [success, setSuccess] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
+
   const handlePost = async () => {
     try {
       const response = await axios.post(
@@ -46,9 +48,20 @@ const Params = () => {
 
       setSuccessModal(true);
       setSuccess(response.data);
-      // alert("Success:", success);s
     } catch (error) {
       console.error("Error:", error);
+    }
+  };
+
+  const fetchParameters = async (codeType) => {
+    try {
+      const response = await axios.get(
+        `http://10.203.14.73:3000/v1/api/license/get-param?code_type='${codeType}'`
+      );
+      setParameters(response.data.result);
+      console.log("Parameters:", response);
+    } catch (error) {
+      console.error("Error fetching parameters:", error);
     }
   };
 
@@ -69,14 +82,19 @@ const Params = () => {
     "Notification Frequency": "NotificationFrequency",
   };
 
-  const handleOpen = (row) => {
+  const handleOpen = (row, type) => {
     setSelectedRow(row);
     setFormValues({
       CodeType: codeTypeMapping[row.parameter],
       CodeDesc: "",
       Status: "Active",
     });
-    setOpen(true);
+    if (type === "add") {
+      setOpen(true);
+    } else {
+      fetchParameters(codeTypeMapping[row.parameter]);
+      setViewOpen(true);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -154,7 +172,7 @@ const Params = () => {
                   <td>
                     <Button
                       sx={{ backgroundColor: "#00357A", width: 30 }}
-                      onClick={() => handleOpen(row)}
+                      onClick={() => handleOpen(row, "add")}
                       size="sm"
                       variant="solid"
                     >
@@ -164,6 +182,7 @@ const Params = () => {
                   <td>
                     <Button
                       sx={{ backgroundColor: "#00357A", width: 30 }}
+                      onClick={() => handleOpen(row, "view")}
                       size="sm"
                       variant="solid"
                     >
@@ -174,6 +193,7 @@ const Params = () => {
               ))}
             </tbody>
           </Table>
+          {/* Add Modal */}
           <Modal
             aria-labelledby="modal-title"
             aria-describedby="modal-desc"
@@ -217,7 +237,6 @@ const Params = () => {
                   <Divider sx={{ marginBottom: 2 }} />
                   {showAlert && ( // Conditionally render Alert component
                     <Alert
-                      // message="Error"
                       description={`Please enter ${selectedRow?.fields[0]}`}
                       type="error"
                       showIcon
@@ -262,16 +281,76 @@ const Params = () => {
                       </Stack>
                     ))}
                   </Stack>
-                  <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
+                  <CardActions>
                     <Button
-                      size="sm"
-                      variant="solid"
-                      sx={{ backgroundColor: "#00357A" }}
+                      sx={{
+                        backgroundColor: "#007bff",
+                        color: "#fff",
+                        marginTop: "16px",
+                      }}
                       onClick={handleSave}
                     >
                       Save
                     </Button>
                   </CardActions>
+                </Typography>
+              )}
+            </Sheet>
+          </Modal>
+          {/* View Modal */}
+          <Modal
+            aria-labelledby="modal-title"
+            aria-describedby="modal-desc"
+            open={viewOpen}
+            onClose={() => setViewOpen(false)}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  backdropFilter: "none",
+                },
+              },
+            }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginLeft: "15%",
+            }}
+          >
+            <Sheet
+              variant="outlined"
+              sx={{
+                width: 500,
+                borderRadius: "md",
+                p: 3,
+                boxShadow: "lg",
+              }}
+            >
+              <ModalClose variant="plain" sx={{ m: 1 }} />
+              {selectedRow && (
+                <Typography id="modal-desc" textColor="text.tertiary">
+                  <Box sx={{ mb: 1 }}>
+                    <Typography level="title-md">
+                      View {selectedRow.parameter} Parameters
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ marginBottom: 2 }} />
+                  <List
+                    pagination={{
+                      onChange: (page) => {
+                        console.log(page);
+                      },
+                      pageSize: 3,
+                    }}
+                    bordered
+                    dataSource={parameters}
+                    renderItem={(item) => (
+                      <List.Item>
+                        {item.code_desc} - {item.status}
+                      </List.Item>
+                    )}
+                  />
                 </Typography>
               )}
             </Sheet>
@@ -286,7 +365,7 @@ const Params = () => {
                 sx: {
                   backgroundColor: "rgba(0, 0, 0, 0.6)",
                   backdropFilter: "none",
-                }, // Example backdrop styling
+                },
               },
             }}
             sx={{
