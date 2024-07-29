@@ -39,12 +39,12 @@ const Initial = () => {
   const [error, setError] = useState(null);
   const [validationError, setValidationError] = useState("");
 
+  const ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
+
   useEffect(() => {
     const fetchBankNames = async () => {
       try {
-        const response = await axios.get(
-          `http://10.203.14.73:3000/v1/api/license/get-license-parameters`
-        );
+        const response = await axios.get(ENDPOINT + `/get-license-parameters`);
         setBankNames(response.data.bankParams);
         setLicenseType(response.data.licenseTypeParams);
         setFrequency(response.data.licenseFrequencyParams);
@@ -144,7 +144,7 @@ const Initial = () => {
     // Uncomment the below code for actual API call
     try {
       const response = await axios.post(
-        `http://10.203.14.73:3000/v1/api/license/generate-license`,
+        ENDPOINT + `/generate-license`,
         formData
       );
       console.log("Response:", response.data);
@@ -153,15 +153,38 @@ const Initial = () => {
       setOpen(true); // Open the modal to show the response
 
       // Download the response
-      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
-        type: "text/plain",
-      });
+      // const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+      //   type: "text/plain",
+      // });
+      // const url = window.URL.createObjectURL(blob);
+      // const a = document.createElement("a");
+      // a.href = url;
+      // a.download = "license.txt";
+      // a.click();
+      // window.URL.revokeObjectURL(url);
+      // function downloadString(response) {
+      // Extract the string from the response
+      const content = response.data.data;
+
+      // Create a Blob with the string content
+      const blob = new Blob([content], { type: "text/plain" });
+
+      // Create a URL for the Blob
       const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary anchor element to trigger the download
       const a = document.createElement("a");
       a.href = url;
-      a.download = "response.txt";
+      a.download = "license.txt";
+
+      // Append anchor to the document and click to trigger download
+      document.body.appendChild(a);
       a.click();
+
+      // Clean up: Remove the anchor from the document and revoke the Blob URL
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      // }
     } catch (error) {
       console.error("Error generating license:", error);
       setError(error);
@@ -504,17 +527,18 @@ const Initial = () => {
                         type="primary"
                         key="console"
                         onClick={() => {
+                          // const from = "1234@example.com";
                           const subject = encodeURIComponent(
                             "License Information"
                           );
+                          // const body = encodeURIComponent(
+                          //   `Dear Sir/Madam,\n\nYour license has been successfully generated. Below are the details:\n\n${response.data}\n\nBest regards,\nUNION SYSTEMS GLOBAL`
+                          // );
                           const body = encodeURIComponent(
-                            `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${JSON.stringify(
-                              response.data,
-                              null,
-                              2
-                            )}\n\nBest regards,\nYour Company`
+                            `Dear Sir/Madam,\n\nYour license has been successfully generated. Find the details in the attached document below\n\nBest regards,\nUNION SYSTEMS GLOBAL`
                           );
-                          window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                          // window.location.href = `mailto:?from=${from}&subject=${subject}&body=${body}`;
+                          window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`;
                         }}
                       >
                         Send Mail

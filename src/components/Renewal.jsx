@@ -20,6 +20,7 @@ import ModalClose from "@mui/joy/ModalClose";
 import Sheet from "@mui/joy/Sheet";
 // import Result from "@mui/joy/Result";
 import { Alert, Result } from "antd";
+// require("dotenv").config();
 
 const Renewal = () => {
   const [bankNames, setBankNames] = useState([]);
@@ -32,6 +33,10 @@ const Renewal = () => {
   const [error, setError] = useState(null);
   const [notificationDate, setNotificationDate] = useState("");
   const [selectedNotificationFreq, setSelectedNotificationFreq] = useState("");
+
+  // require("dotenv").config();
+  const ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
+  console.log(ENDPOINT);
 
   function frontendDate(dateString) {
     const originalDate = new Date(dateString);
@@ -53,9 +58,7 @@ const Renewal = () => {
   useEffect(() => {
     const fetchBankNames = async () => {
       try {
-        const response = await axios.get(
-          `http://10.203.14.73:3000/v1/api/license/get-licensed-banks`
-        );
+        const response = await axios.get(ENDPOINT + "/get-licensed-banks");
         setBankNames(response.data.message);
         console.log("Bank names:", response.data.message);
       } catch (error) {
@@ -109,12 +112,32 @@ const Renewal = () => {
     };
     try {
       const response = await axios.post(
-        "http://10.203.14.73:3000/v1/api/license/reactivate-license",
+        ENDPOINT + "/reactivate-license",
         formData
       );
       console.log("Save response:", response);
       console.log("Saved details:", formData);
       setResponse(response);
+      const content = response.data.data;
+
+      // Create a Blob with the string content
+      const blob = new Blob([content], { type: "text/plain" });
+
+      // Create a URL for the Blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary anchor element to trigger the download
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "license.txt";
+
+      // Append anchor to the document and click to trigger download
+      document.body.appendChild(a);
+      a.click();
+
+      // Clean up: Remove the anchor from the document and revoke the Blob URL
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
       // // Clear form upon successful save
       // if (response.status === 200) {
@@ -148,12 +171,9 @@ const Renewal = () => {
 
   const fetchDetails = async () => {
     try {
-      const response = await axios.post(
-        "http://10.203.14.73:3000/v1/api/license/get-bank-details",
-        {
-          bank_id: bankId,
-        }
-      );
+      const response = await axios.post(ENDPOINT + "/get-bank-details", {
+        bank_id: bankId,
+      });
       console.log("Response:", response.data);
       setDetails(response.data.message[0]);
       setEndDate(
@@ -439,11 +459,7 @@ const Renewal = () => {
                               "License Information"
                             );
                             const body = encodeURIComponent(
-                              `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${JSON.stringify(
-                                response.data,
-                                null,
-                                2
-                              )}\n\nBest regards,\nYour Company`
+                              `Dear Sir/Madam,\n\nWe are pleased to inform you that your license has been successfully generated. Below are the details:\n\n${response.data.data}\n\nBest regards,\nUNION SYSTEMS GLOBAL`
                             );
                             window.location.href = `mailto:?subject=${subject}&body=${body}`;
                           }}

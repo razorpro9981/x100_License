@@ -82,6 +82,8 @@ export default function Amendment() {
   const [error, setError] = useState(null);
   const [confirm, setConfirm] = useState(false);
 
+  const ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
+
   function frontendDate(dateString) {
     const originalDate = new Date(dateString);
 
@@ -100,9 +102,7 @@ export default function Amendment() {
   }
   const fetchData = async () => {
     try {
-      const response = await axios.get(
-        `http://10.203.14.73:3000/v1/api/license/get-licensed-banks`
-      );
+      const response = await axios.get(ENDPOINT + `/get-licensed-banks`);
       console.log("Save response:", response.data);
       setDetails(response.data.message);
     } catch (error) {
@@ -112,12 +112,9 @@ export default function Amendment() {
 
   const fetchDetails = async (bankId) => {
     try {
-      const response = await axios.post(
-        "http://10.203.14.73:3000/v1/api/license/get-bank-details",
-        {
-          bank_id: bankId,
-        }
-      );
+      const response = await axios.post(ENDPOINT + "/get-bank-details", {
+        bank_id: bankId,
+      });
       console.log("Response:", response.data);
       setFormDetails(response.data.message[0]);
       setSelectedLicenseType(response.data.message[0]?.license_type_id);
@@ -175,9 +172,7 @@ export default function Amendment() {
   useEffect(() => {
     const fetchBankNames = async () => {
       try {
-        const response = await axios.get(
-          `http://10.203.14.73:3000/v1/api/license/get-license-parameters`
-        );
+        const response = await axios.get(ENDPOINT + `/get-license-parameters`);
         // setBankNames(response.data.bankParams);
         // setSelectedLicenseType(response.data.licenseTypeParams[0].id);
         setLicenseType(response.data.licenseTypeParams);
@@ -360,7 +355,7 @@ export default function Amendment() {
     // Uncomment the below code for actual API call
     try {
       const response = await axios.put(
-        `http://10.203.14.73:3000/v1/api/license/amend-license-details`,
+        ENDPOINT + `/amend-license-details`,
         formData
       );
       console.log("Response:", response.data);

@@ -8,6 +8,7 @@ import Table from "@mui/joy/Table";
 import Stack from "@mui/joy/Stack";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
+import DeleteIcon from "@mui/icons-material/Delete"; // Import Delete icon
 import Modal from "@mui/joy/Modal";
 import ModalClose from "@mui/joy/ModalClose";
 import Sheet from "@mui/joy/Sheet";
@@ -19,6 +20,7 @@ import Card from "@mui/joy/Card";
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import axios from "axios";
+// import DeleteIcon from "@mui/icons-material/Delete";
 
 const Params = () => {
   const [open, setOpen] = useState(false);
@@ -34,16 +36,15 @@ const Params = () => {
   const [success, setSuccess] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
 
+  const ENDPOINT = process.env.REACT_APP_API_ENDPOINT;
+
   const handlePost = async () => {
     try {
-      const response = await axios.post(
-        `http://10.203.14.73:3000/v1/api/license/add-param`,
-        {
-          code_type: formValues.CodeType,
-          code_desc: formValues.CodeDesc,
-          status: formValues.Status,
-        }
-      );
+      const response = await axios.post(ENDPOINT + `/add-param`, {
+        code_type: formValues.CodeType,
+        code_desc: formValues.CodeDesc,
+        status: formValues.Status,
+      });
       console.log("Response:", response.data);
 
       setSuccessModal(true);
@@ -56,12 +57,22 @@ const Params = () => {
   const fetchParameters = async (codeType) => {
     try {
       const response = await axios.get(
-        `http://10.203.14.73:3000/v1/api/license/get-param?code_type='${codeType}'`
+        ENDPOINT + `/get-param?code_type='${codeType}'`
       );
       setParameters(response.data.result);
       console.log("Parameters:", response);
     } catch (error) {
       console.error("Error fetching parameters:", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const response = await axios.delete(ENDPOINT + `/delete-param?id=${id}`);
+      console.log("Delete response:", response.data);
+      fetchParameters(formValues.CodeType);
+    } catch (error) {
+      console.error("Error deleting parameter:", error);
     }
   };
 
@@ -284,7 +295,7 @@ const Params = () => {
                   <CardActions>
                     <Button
                       sx={{
-                        backgroundColor: "#007bff",
+                        backgroundColor: "#00357A",
                         color: "#fff",
                         marginTop: "16px",
                       }}
@@ -346,7 +357,19 @@ const Params = () => {
                     bordered
                     dataSource={parameters}
                     renderItem={(item) => (
-                      <List.Item>
+                      <List.Item
+                        actions={[
+                          <Button
+                            sx={{ backgroundColor: "#920505", width: 35 }}
+                            key="delete"
+                            type="text"
+                            // icon={<DeleteIcon />}
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <DeleteIcon />
+                          </Button>,
+                        ]}
+                      >
                         {item.code_desc} - {item.status}
                       </List.Item>
                     )}
