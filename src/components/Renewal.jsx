@@ -102,12 +102,16 @@ const Renewal = () => {
   const handleSave = async () => {
     const formData = {
       bank_id: bankId,
+      bank_desc: details.bank_desc,
       license_type_id: details.license_type_id,
+      license_type_desc: details.license_type,
       license_frequency_id: details.license_frequency_id,
+      license_frequency_desc: details.license_frequency,
       start_date: details.start_date,
       end_date: endDate,
       notification_start: notificationDate,
       notification_frequency_id: details.notification_frequency_id,
+      notification_frequency_desc: selectedNotificationFreq,
       grace_period: details.grace_period,
     };
     try {

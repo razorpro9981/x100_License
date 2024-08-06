@@ -18,7 +18,7 @@ import ModalClose from "@mui/joy/ModalClose";
 import Sheet from "@mui/joy/Sheet";
 import Input from "@mui/joy/Input";
 import Swal from "sweetalert2";
-import { Alert, Result } from "antd";
+import { Alert, notification, Result } from "antd";
 import dayjs from "dayjs";
 //ppp
 const Initial = () => {
@@ -129,10 +129,19 @@ const Initial = () => {
       : "";
 
     const formData = {
+      bank_desc: bankNames.find((bank) => bank.id === selectedBank).code_desc,
       bank_id: selectedBank,
       license_type_id: selectedLicenseType,
+      license_type_desc: licenseType.find(
+        (license) => license.id === selectedLicenseType
+      ).code_desc,
       license_frequency_id: selectedFrequency,
+      license_frequency_desc: frequency.find(
+        (freq) => freq.id === selectedFrequency
+      ).code_desc,
       notification_frequency_id: notificationFrequencyId,
+      notification_frequency_desc: selectedNotificationFreq,
+      // notification_frequency_id: 1,
       start_date: startDate,
       end_date: endDate,
       notification_start: notificationStart,
